@@ -1,0 +1,659 @@
+@import "tailwindcss";
+
+/* helpers */
+html, body, #root { height: 100%; }
+.container-max { max-width: 1300px; margin: 0 auto; }
+
+/* header glass */
+.header-transparent {
+  background: rgba(255,255,255,0.86);
+  backdrop-filter: blur(6px);
+  border-bottom: 0;
+}
+
+/* --- glossy hero (strong, right highlight) --- */
+.hero-gloss {
+  min-height: 72vh;
+  background-color: #eaf3ff;
+  background-image:
+    radial-gradient(1000px 700px at 95% 60%, rgba(124,58,237,0.36), transparent 18%),
+    radial-gradient(700px 500px at 78% 86%, rgba(99,102,241,0.14), transparent 20%),
+    linear-gradient(180deg, #eaf3ff 0%, #f6fbff 36%, #efe7ff 100%);
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: relative;
+  overflow: hidden;
+}
+
+/* overlay to soften */
+.hero-gloss::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(60% 40% at 40% 30%, rgba(255,255,255,0.04), rgba(0,0,0,0.02) 80%);
+  mix-blend-mode: overlay;
+}
+
+/* left gutter for roomy layout */
+.hero-inner {
+  padding-left: 6rem;   /* increase to 8rem if you want more left bias */
+  padding-right: 3rem;
+}
+
+/* hero title: explicit large size and compact leading */
+.hero-title {
+  color: #071033;
+  letter-spacing: -0.02em;
+  line-height: 0.92;
+  margin: 0;
+}
+
+/* exact large desktop size */
+@media (min-width: 1024px) {
+  .hero-title { font-size: 96px; } /* change to 110px if you want even larger */
+}
+
+/* CTA */
+.hero-cta {
+  border-radius: 12px;
+  padding: 14px 28px;
+  box-shadow: 0 12px 30px rgba(99,102,241,0.18);
+  display: inline-block;
+}
+
+/* soft cards */
+.soft-card {
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 12px 30px rgba(12,18,36,0.06);
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
+  padding: 1.1rem;
+}
+/* Features: glass card helpers */
+#features { position: relative; }
+
+/* Add a faint page-level gloss behind the grid on large viewports */
+@media (min-width: 1024px) {
+  #features::before {
+    content: '';
+    position: absolute;
+    right: 6%;
+    top: -30px;
+    width: 420px;
+    height: 420px;
+    background: radial-gradient(closest-side, rgba(124,58,237,0.08), transparent 40%);
+    filter: blur(36px);
+    z-index: -11;
+    pointer-events: none;
+  }
+}
+
+/* Slight lift on hover for article container */
+#features article {
+  transition: transform 220ms cubic-bezier(.2,.9,.2,1), box-shadow 220ms;
+}
+#features article:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 40px rgba(12,18,36,0.08);
+}
+/* Overlapping stacked cards layout fix for small screens */
+@media (max-width: 1024px) {
+  .hero-stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    justify-items: center;
+  }
+
+  .hero-stats > div {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: none !important;
+    width: 90% !important;
+    margin: 0 auto;
+  }
+}
+/* ---------- Students page form & control polish (paste into index.css) ---------- */
+
+/* Scope to students page */
+.students-page input[type="text"],
+.students-page input[type="search"],
+.students-page textarea,
+.students-page select {
+  background: #fff;
+  border: 1px solid rgba(15,23,42,0.08);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem; /* 15px */
+  color: #0f172a;
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  box-shadow: none;
+}
+
+/* subtle inner shadow like Tailwind forms */
+.students-page input[type="text"]:focus,
+.students-page input[type="search"]:focus,
+.students-page textarea:focus,
+.students-page select:focus {
+  border-color: rgba(99,102,241,0.6);
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.08);
+}
+
+/* select caret & padding fix */
+.students-page select {
+  padding-right: 1.25rem;
+  background-image: linear-gradient(45deg, transparent 50%, #6b7280 50%),
+                    linear-gradient(135deg, #6b7280 50%, transparent 50%);
+  background-position: calc(100% - 0.7rem) calc(1.05rem), calc(100% - 0.55rem) calc(1.05rem);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+/* Buttons (Import CSV / Prev/Next) */
+.students-page button {
+  font-size: 0.9rem;
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid rgba(15,23,42,0.06);
+  background: #ffffff;
+  cursor: pointer;
+  transition: box-shadow .12s ease, transform .08s ease;
+}
+.students-page button:hover { box-shadow: 0 6px 16px rgba(15,23,42,0.06); transform: translateY(-1px); }
+
+/* Elevated primary button (use class .primary-btn) */
+.primary-btn {
+  background: linear-gradient(90deg, #6366f1, #7c3aed);
+  color: white;
+  border: none;
+  box-shadow: 0 8px 30px rgba(124,58,237,0.12);
+}
+.primary-btn:hover { opacity: .95; transform: translateY(-1px); }
+
+/* Table row divisions & spacing */
+.students-page table thead th { color: #6b7280; font-weight: 600; padding: 0.85rem 0.75rem; }
+.students-page table tbody tr { border-top: 1px solid rgba(15,23,42,0.04); }
+.students-page table tbody tr td { padding: 0.95rem 0.75rem; vertical-align: middle; }
+
+/* small avatar circle */
+.students-page .avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #4f46e5;
+  background: #eef2ff;
+}
+
+/* Drawer/modal polish */
+.students-page .drawer-overlay {
+  background: rgba(2,6,23,0.35);
+}
+.students-page .drawer {
+  box-shadow: 0 18px 50px rgba(2,6,23,0.18);
+  border-left: 1px solid rgba(15,23,42,0.04);
+}
+
+/* subtle custom scrollbar for wide tables (desktop only) */
+.students-page .overflow-x-auto::-webkit-scrollbar { height: 10px; width: 10px; }
+.students-page .overflow-x-auto::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.14); border-radius: 9999px; }
+
+/* small responsive adjustments */
+@media (max-width: 1024px) {
+  .students-page .avatar { width: 32px; height: 32px; font-size: .85rem; }
+  .students-page input[type="search"] { width: 48vw; }
+}
+
+/* ==========================================================
+   🎨 FINAL VERSION — Students Page Styling
+   ========================================================== */
+
+/* ---------- Full-width colored glossy background ---------- */
+.students-page-bg {
+  position: relative;
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    rgba(124, 58, 237, 0.25),
+    rgba(99, 102, 241, 0.18) 40%,
+    rgba(255, 255, 255, 0.96) 100%
+  );
+  -webkit-backdrop-filter: blur(40px) saturate(130%);
+  backdrop-filter: blur(40px) saturate(130%);
+  overflow: hidden;
+  width: 100%;
+}
+
+/* soft violet-indigo radial glow */
+.students-page-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(167,139,250,0.45), transparent 60%),
+    radial-gradient(circle at 90% 80%, rgba(99,102,241,0.35), transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ensure content sits above glossy bg */
+.students-page {
+  position: relative;
+  z-index: 2;
+}
+
+/* ---------- Main white card ---------- */
+.students-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid rgba(15,23,42,0.05);
+  box-shadow:
+    0 8px 28px rgba(15,23,42,0.06),
+    0 1px 4px rgba(15,23,42,0.04);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.students-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 16px 40px rgba(99,102,241,0.12),
+    0 4px 10px rgba(15,23,42,0.08);
+}
+
+/* ---------- Filter chips / select inputs ---------- */
+.students-card select,
+.students-card input[type="search"],
+.students-card input[type="text"] {
+  background: #ffffff;
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  color: #0f172a;
+  box-shadow: 0 1px 4px rgba(15,23,42,0.03);
+}
+
+.students-card select:focus,
+.students-card input:focus {
+  outline: none;
+  border-color: rgba(99,102,241,0.6);
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.08);
+}
+
+/* ---------- Buttons ---------- */
+.students-card button {
+  background: #ffffff;
+  border: 1px solid rgba(15,23,42,0.06);
+  border-radius: 0.6rem;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.students-card button:hover {
+  box-shadow: 0 6px 16px rgba(15,23,42,0.06);
+  transform: translateY(-1px);
+}
+
+/* ---------- Optional table polish ---------- */
+.students-card table thead th {
+  color: #6b7280;
+  font-weight: 600;
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid rgba(15,23,42,0.05);
+}
+
+.students-card table tbody tr {
+  border-top: 1px solid rgba(15,23,42,0.04);
+  transition: background 0.15s ease;
+}
+.students-card table tbody tr:hover {
+  background: rgba(99,102,241,0.04);
+}
+
+/* ---------- No white strips — full page coverage ---------- */
+html, body {
+  background: transparent;
+}
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------- Responsive tweak ---------- */
+@media (max-width: 768px) {
+  .students-page-bg::before {
+    filter: blur(40px);
+  }
+}
+
+/* ---------- Student Detail Drawer Styling ---------- */
+.StudentDetailDrawer {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100vh;
+  width: 420px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(25px) saturate(160%);
+  -webkit-backdrop-filter: blur(25px) saturate(160%);
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    -8px 0 25px rgba(15, 23, 42, 0.12),
+    0 0 1px rgba(255, 255, 255, 0.3);
+  transition: all 0.1ms;
+  z-index: 100;
+}
+
+/* header + buttons */
+.StudentDetailDrawer button {
+  transition: background 0.1s ease, box-shadow 0.2s ease;
+}
+
+.StudentDetailDrawer button:hover {
+  background: rgba(249, 250, 251, 0.8);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+/* name section */
+.StudentDetailDrawer .student-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.StudentDetailDrawer .student-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+  color: #4338ca;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+/* tasks */
+.StudentDetailDrawer .task-card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.1ms, box-shadow 0.2s ease;
+}
+
+.StudentDetailDrawer .task-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+/* footer buttons */
+.StudentDetailDrawer .footer-btn {
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  transition: all 0.1ms;
+}
+
+.StudentDetailDrawer .footer-btn.primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+}
+
+.StudentDetailDrawer .footer-btn.primary:hover {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+}
+
+.StudentDetailDrawer .footer-btn.secondary:hover {
+  background: rgba(249, 250, 251, 0.9);
+}
+/* Glossy / glass helpers — add this after Tailwind's base imports */
+.gloss-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  /* subtle outer gradient border using background-clip */
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.02));
+  box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+/* gradient border layer (sits behind content) */
+.gloss-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px; /* border thickness */
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(99,102,241,0.12), rgba(168,85,247,0.08) 40%, rgba(99,102,241,0.08));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* glossy inner panel (actual content area) */
+.gloss-card .gloss-inner {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.48));
+  backdrop-filter: blur(6px) saturate(120%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  border-radius: 10px;
+  padding: 1rem;
+  min-height: 120px;
+}
+
+/* gloss highlight stripe across card on hover */
+.gloss-card .gloss-highlight {
+  pointer-events: none;
+  position: absolute;
+  right: -40%;
+  top: -40%;
+  width: 180%;
+  height: 60%;
+  transform: rotate(-18deg);
+  background: linear-gradient(90deg, rgba(255,255,255,0.10), rgba(255,255,255,0.25) 30%, rgba(255,255,255,0.06));
+  opacity: 0;
+  transition: opacity .25s ease, transform .25s ease;
+  z-index: 3;
+  filter: blur(8px);
+}
+
+/* hover state */
+.gloss-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 36px rgba(16,24,40,0.12);
+}
+.gloss-card:hover .gloss-highlight {
+  opacity: 1;
+  transform: rotate(-18deg) translateX(-6px);
+}
+
+/* small pill tags with faint glass */
+.gloss-pill {
+  background: rgba(15,23,42,0.04);
+  border: 1px solid rgba(15,23,42,0.04);
+  backdrop-filter: blur(4px);
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  font-size: 12px;
+  color: #475569;
+}
+
+/* CTA gradient button */
+.btn-gradient {
+  background: linear-gradient(90deg,#6366F1,#A855F7);
+  color: white;
+  box-shadow: 0 6px 16px rgba(99,102,241,0.12);
+}
+.btn-gradient:active { transform: translateY(1px) }
+/* ----- Glossy colored card styles ----- */
+.glossy {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 0; /* inner content will handle padding */
+  transition: transform .18s ease, box-shadow .18s ease;
+  cursor: default;
+  background-clip: padding-box;
+  border: 1px solid rgba(255,255,255,0.06);
+  /* fallback neutral background in case inner uses transparency */
+  background-color: rgba(255,255,255,0.85);
+}
+
+/* gradient border layer */
+.glossy::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;            /* border thickness */
+  border-radius: 12px;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(0,0,0,0));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* inner glossy panel */
+.glossy > .gloss-inner {
+  position: relative;
+  z-index: 2;
+  padding: 1rem; /* keep existing padding look */
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.6));
+  backdrop-filter: blur(6px) saturate(120%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  min-height: 110px;
+}
+
+/* highlight stripe (shine) */
+.glossy .gloss-shine {
+  position: absolute;
+  right: -50%;
+  top: -40%;
+  width: 200%;
+  height: 60%;
+  transform: rotate(-18deg);
+  background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.26) 30%, rgba(255,255,255,0.06));
+  opacity: 0;
+  z-index: 3;
+  filter: blur(8px);
+  transition: opacity .28s ease, transform .28s ease;
+  pointer-events: none;
+}
+
+/* hover / focus */
+.glossy:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 36px rgba(16,24,40,0.12);
+}
+.glossy:hover .gloss-shine {
+  opacity: 1;
+  transform: rotate(-18deg) translateX(-6px);
+}
+
+/* accent color variables — default (indigo) */
+.glossy { --accent-1: #6366F1; --accent-2: #A855F7; --accent-3: rgba(99,102,241,0.12); }
+
+/* apply gradient border colors using data-accent */
+.glossy[data-accent="indigo"]::before {
+  background: linear-gradient(90deg, rgba(99,102,241,0.12), rgba(168,85,247,0.08) 40%, rgba(99,102,241,0.06));
+}
+.glossy[data-accent="emerald"]::before {
+  background: linear-gradient(90deg, rgba(16,185,129,0.12), rgba(6,182,212,0.06) 40%, rgba(16,185,129,0.06));
+}
+.glossy[data-accent="rose"]::before {
+  background: linear-gradient(90deg, rgba(236,72,153,0.12), rgba(249,115,22,0.06) 40%, rgba(236,72,153,0.06));
+}
+.glossy[data-accent="amber"]::before {
+  background: linear-gradient(90deg, rgba(234,179,8,0.12), rgba(245,158,11,0.06) 40%, rgba(234,179,8,0.06));
+}
+.glossy[data-accent="slate"]::before {
+  background: linear-gradient(90deg, rgba(100,116,139,0.10), rgba(148,163,184,0.05) 40%, rgba(100,116,139,0.06));
+}
+
+/* small pill tag style to match glossy look */
+.glossy .pill {
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.5);
+  padding: .25rem .5rem;
+  border-radius: 999px;
+  font-size: 12px;
+  color: rgba(15,23,42,0.8);
+}
+
+/* subtle title treatment */
+.glossy .title {
+  color: #0f172a; /* rather than indigo so it's readable on light inner BG */
+  font-weight: 600;
+}
+
+/* responsive tweak — tighter padding on small screens */
+@media (max-width: 640px) {
+  .glossy > .gloss-inner { padding: 0.75rem }
+}
+
+/* Put this after your Tailwind imports so it can override where needed */
+/* src/index.css (or src/theme.css) */
+
+:root {
+  --bg: #f8fafc;           /* slate-50 */
+  --card-bg: #ffffff;      /* white */
+  --muted: #64748b;        /* slate-500 */
+  --text: #0f172a;         /* slate-900 */
+  --card-border: #e6edf3;  /* slate-100 */
+  --accent: #6366f1;       /* indigo-500-ish */
+}
+
+/* dark theme overrides */
+body.theme-dark {
+  --bg: #0b1220;           /* near slate-900 */
+  --card-bg: #0f1724;      /* dark card */
+  --muted: #9ca3af;        /* lighter muted */
+  --text: #e6eef8;         /* light text */
+  --card-border: #111827;  /* dark border */
+  --accent: #7c3aed;       /* purple-ish */
+}
+
+/* helpers you can use on containers (works with Tailwind layout) */
+.app-bg {
+  background-color: var(--bg);
+  color: var(--text);
+}
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text);
+}
+.muted { color: var(--muted); }
+.accent-bg { background-color: var(--accent); color: white; }
+
+/* Make main content center and full width up to max */
+.settings-container {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
+}

@@ -1,0 +1,95 @@
+[
+  {
+    "id": "u1",
+    "name": "Alice",
+    "skills": [
+      "react",
+      "javascript",
+      "node"
+    ],
+    "experienceLevel": "senior",
+    "available": true,
+    "email": "alice@example.com",
+    "password": "$2b$10$9uve0maeVZOGWb9v2GVx1uI20qo5yKcu32INd.03xUknh/yQcPWp6"
+  },
+  {
+    "id": "u2",
+    "name": "Bob",
+    "skills": [
+      "python",
+      "flask",
+      "react"
+    ],
+    "experienceLevel": "mid",
+    "available": true,
+    "email": "bob@example.com",
+    "password": "$2b$10$cZjQLY.SQKvdLF3OQcNEOe8QXWufhTpgU.ks57OkQL4QygJ7crhNy"
+  },
+  {
+    "id": "u3",
+    "name": "Charlie",
+    "skills": [
+      "javascript",
+      "node",
+      "express"
+    ],
+    "experienceLevel": "junior",
+    "available": false,
+    "email": "charlie@example.com",
+    "password": "$2b$10$fjQgDVjUMQ76Boml8ISzuOl6Qo3FhG/pADwLC8lX2IfTl2Qmv2oAm"
+  },
+  {
+    "id": "u4",
+    "name": "Eve",
+    "skills": [
+      "python",
+      "ml",
+      "django"
+    ],
+    "experienceLevel": "senior",
+    "available": true,
+    "email": "eve@example.com",
+    "password": "$2b$10$Y3jNSjlIui.9BtBdYvf34eINJRosAJHJzhPMxsWN4JXMHomI5nWzq"
+  },
+  {
+    "id": "u5",
+    "name": "Mallory",
+    "skills": [
+      "react",
+      "javascript",
+      "flask"
+    ],
+    "experienceLevel": "mid",
+    "available": true,
+    "email": "mallory@example.com",
+    "password": "$2b$10$O0Km2/R4bToV7DV79EWf3efAdh40Mj07y/cbC/tZRe8TAG33TA76C"
+  },
+  {
+    "id": 1,
+    "name": "Demo Student",
+    "email": "student@example.com",
+    "password": "$2b$10$pH0VRu20X4C7IbLksTIImeRNQBq2BTWTD1qmx/Gj2rDPD.Vfb.V7q",
+    "role": "student"
+  },
+  {
+    "id": 2,
+    "name": "Demo Admin",
+    "email": "admin@example.com",
+    "password": "$2b$10$ljypwkekjLF3.8uxiiKsV.w78ad8itrGdqgrr8NWRCb3O0ML9JetW",
+    "role": "admin"
+  },
+  {
+    "id": null,
+    "name": "TestUser",
+    "email": "testuser+1761338183@example.com",
+    "password": "$2b$10$gmDA4Xqti754nFpCMJxCFuFNK.44sjHZmZws3dhlhJtnKjVXzc1d.",
+    "role": "student"
+  },
+  {
+    "id": null,
+    "name": "TestUser",
+    "email": "testuser+1761394949@example.com",
+    "password": "$2b$10$8Z/xlyrvWIWTtovPNrbkG.WI2KcfjTovQquAvFzJCUEa/GwWYPu4K",
+    "role": "student"
+  }
+]

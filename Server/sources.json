@@ -1,0 +1,26 @@
+[
+ {
+  "id": "mlh-events",
+  "name": "MLH (events)",
+  "type": "html",
+  "url": "https://mlh.io/",
+  "puppeteerSelectors": {
+    "item": ".event-wrapper",
+    "title": "h3.event-name",
+    "link": "a.event-link",
+    "desc": ".event-location"
+  }
+ },
+ {
+  "id": "devpost-hackathons",
+  "name": "Devpost (hackathons)",
+  "type": "html",
+  "url": "https://devpost.com/hackathons",
+  "puppeteerSelectors": {
+    "item": ".hackathon-tile",
+    "title": "h3",
+    "link": "a.tile-link",
+    "desc": "p.challenge-description"
+  }
+}
+]

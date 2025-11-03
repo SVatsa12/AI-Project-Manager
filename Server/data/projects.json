@@ -1,0 +1,14 @@
+[
+  {
+    "id": "p1",
+    "name": "Web App (React + Node)",
+    "skills": ["react","node","javascript"],
+    "description": "A small fullstack app"
+  },
+  {
+    "id": "p2",
+    "name": "ML prototype",
+    "skills": ["python","ml"],
+    "description": "Model + API"
+  }
+]

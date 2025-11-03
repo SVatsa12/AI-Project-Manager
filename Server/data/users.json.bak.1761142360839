@@ -1,0 +1,77 @@
+[
+  {
+    "id": "u1",
+    "name": "Alice",
+    "skills": [
+      "react",
+      "javascript",
+      "node"
+    ],
+    "experienceLevel": "senior",
+    "available": true,
+    "email": "alice@example.com",
+    "password": "$2b$10$jlwKtMa6JWQ8odBxopJ16uCbbknqH5jejzjYfLqcaOKuMhmkfmssW"
+  },
+  {
+    "id": "u2",
+    "name": "Bob",
+    "skills": [
+      "python",
+      "flask",
+      "react"
+    ],
+    "experienceLevel": "mid",
+    "available": true,
+    "email": "bob@example.com"
+  },
+  {
+    "id": "u3",
+    "name": "Charlie",
+    "skills": [
+      "javascript",
+      "node",
+      "express"
+    ],
+    "experienceLevel": "junior",
+    "available": false,
+    "email": "charlie@example.com"
+  },
+  {
+    "id": "u4",
+    "name": "Eve",
+    "skills": [
+      "python",
+      "ml",
+      "django"
+    ],
+    "experienceLevel": "senior",
+    "available": true,
+    "email": "eve@example.com"
+  },
+  {
+    "id": "u5",
+    "name": "Mallory",
+    "skills": [
+      "react",
+      "javascript",
+      "flask"
+    ],
+    "experienceLevel": "mid",
+    "available": true,
+    "email": "mallory@example.com"
+  },
+  {
+    "id": 1,
+    "name": "Demo Student",
+    "email": "student@example.com",
+    "password": "password",
+    "role": "student"
+  },
+  {
+    "id": 2,
+    "name": "Demo Admin",
+    "email": "admin@example.com",
+    "password": "password",
+    "role": "admin"
+  }
+]
