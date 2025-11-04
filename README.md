@@ -1,5 +1,5 @@
 <<<<<<< HEAD
-# AI-Task-Allocator
+# AI-Project-Allocator
 =======
 # React + Vite
 
