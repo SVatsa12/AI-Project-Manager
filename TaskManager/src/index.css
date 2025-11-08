@@ -657,3 +657,11 @@ body.theme-dark {
   padding-top: 2.5rem;
   padding-bottom: 2.5rem;
 }
+
+.students-page .add-student {
+  background-color: #059669;  /* emerald-600 */
+  color: #fff;
+}
+.students-page .add-student:hover {
+  background-color: #047857;  /* emerald-700 */
+}
