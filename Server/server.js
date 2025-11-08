@@ -14,9 +14,9 @@ const puppeteer = require("puppeteer")
 const puppeteerExtra = require('puppeteer-extra')
 const StealthPlugin = require('puppeteer-extra-plugin-stealth')
 const allocatorRouter = require("./routes/allocator")
-const authRouter = require("./routes/auth") 
+const authRouter = require("./routes/auth")
 const http = require('http');
-const { initIo } = require('./io'); // new
+const { initIo } = require('./io'); // new (kept; unused if you prefer other init)
 const { Server: IOServer } = require('socket.io');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
@@ -29,7 +29,16 @@ app.use(cors())
 app.use(express.json())
 app.use(morgan("tiny"))
 app.use("/api/allocator", allocatorRouter)
-app.use("/api/auth", authRouter)  
+app.use("/api/auth", authRouter)
+
+// mount students router (ensure file exists at routes/students.js)
+let studentsRouter
+try {
+  studentsRouter = require("./routes/students")
+  app.use("/api/students", studentsRouter)
+} catch (e) {
+  console.warn("routes/students not found or failed to load; continuing without it.", e.message)
+}
 
 const parser = new Parser({ timeout: 15000 })
 const limiter = rateLimit({
@@ -181,7 +190,7 @@ async function fetchTextWithHeaders(url, opts = {}) {
 
 
 // then the function:
-// ++++ REPLACE THE ENTIRE OLD FUNCTION WITH THIS NEW ONE ++++
+// ++++ REPLACE THE ENTIRE OLD FUNCTION WITH THIS NEW ONE ++++ (keeps Puppeteer)
 async function fetchWithPuppeteer(url, opts = {}) {
   const timeoutMs = opts.timeoutMs || 40000; // Increased timeout
   let browser = null;
@@ -525,12 +534,23 @@ const PORT = process.env.PORT || 4003;
       cors: { origin: true, methods: ["GET", "POST"] },
     });
 
-    // Make io available in all routes via req.app.get('io')
+    // Make io available in all routes via req.app.get('io') and app.locals.io
     app.set("io", io);
+    app.locals.io = io;
 
     // ---- Mount persisted competitions router *after* io is set ----
     const persistedRouter = require("./routes/competitionsPersisted");
     app.use("/api/competitions", persistedRouter);
+
+    // If the students router wasn't available earlier, ensure it's mounted now (safe guard)
+    try {
+      if (!studentsRouter) {
+        const sr = require("./routes/students")
+        app.use("/api/students", sr)
+      }
+    } catch (e) {
+      // ignore if not present
+    }
 
     // ---- WebSocket events ----
     io.on("connection", (socket) => {
@@ -540,6 +560,40 @@ const PORT = process.env.PORT || 4003;
         console.log("❌ Socket disconnected:", socket.id);
       });
     });
+
+    // ---- Add CSV import endpoint (backend support for Import CSV button) ----
+    try {
+      // Check if a students import endpoint isn't already provided by routes/students
+      const User = require("../models/User")
+      app.post("/api/students/importcsv", async (req, res) => {
+        try {
+          const rows = req.body.rows || []
+          if (!Array.isArray(rows)) return res.status(400).json({ ok: false, error: "rows must be an array" })
+          let created = 0
+          for (const r of rows) {
+            if (!r.email) continue
+            const existing = await User.findOne({ email: (r.email || "").toLowerCase() })
+            if (existing) continue
+            const u = new User({
+              name: r.name || (r.email || "").split("@")[0],
+              email: (r.email || "").toLowerCase(),
+              skills: Array.isArray(r.skills) ? r.skills : (typeof r.skills === "string" ? r.skills.split(",").map(s=>s.trim()).filter(Boolean) : []),
+              role: "student"
+            })
+            await u.save()
+            created++
+          }
+          // emit update
+          try { if (app.locals && app.locals.io) app.locals.io.emit("students:updated") } catch (e) {}
+          res.json({ ok: true, created })
+        } catch (e) {
+          console.error("Import CSV failed:", e)
+          res.status(500).json({ ok: false, error: e.message })
+        }
+      })
+    } catch (e) {
+      console.warn("Failed to install importcsv endpoint:", e.message)
+    }
 
     // ---- Start the server ----
     server.listen(PORT, () =>
