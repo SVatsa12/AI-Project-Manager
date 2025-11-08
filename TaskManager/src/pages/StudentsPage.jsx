@@ -4,6 +4,7 @@ import { Search, Edit2, Trash2, UserX, MoreHorizontal, UploadCloud, PlusCircle }
 import { motion } from "framer-motion"
 import { createPortal } from "react-dom"
 import { io } from "socket.io-client"
+// import { Transition } from "@headlessui/react"; // optional
 
 // Reads/writes the same storage key used by AdminDashboard
 const STORAGE_KEY = "gp_state_v1"
@@ -80,6 +81,85 @@ function AddStudentModal({ onClose, onAdd }) {
   )
 }
 
+/* ===== EditStudentModal (small, local edit modal) ===== */
+function EditStudentModal({ student, onClose, onSave }) {
+  const [form, setForm] = useState({
+    name: student?.name || "",
+    email: student?.email || "",
+    skills: (student?.skills || []).join(", "),
+  })
+
+  useEffect(() => {
+    setForm({
+      name: student?.name || "",
+      email: student?.email || "",
+      skills: (student?.skills || []).join(", "),
+    })
+  }, [student])
+
+  function change(e) {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  async function submit(e) {
+    e.preventDefault()
+    const payload = {
+      ...student,
+      name: form.name.trim(),
+      email: form.email.trim(),
+      skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
+    }
+    await onSave(payload)
+  }
+
+  if (!student) return null
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+        <h2 className="text-lg font-semibold mb-4">Edit Student</h2>
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-600">Name</label>
+            <input name="name" value={form.name} onChange={change} required className="w-full border rounded-lg px-3 py-2 mt-1" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-600">Email</label>
+            <input name="email" type="email" value={form.email} onChange={change} required className="w-full border rounded-lg px-3 py-2 mt-1" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-600">Skills (comma separated)</label>
+            <input name="skills" value={form.skills} onChange={change} className="w-full border rounded-lg px-3 py-2 mt-1" />
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
+            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+/* ===== ConfirmDialog (reusable) ===== */
+function ConfirmDialog({ open, title, message, onConfirm, onCancel }) {
+  if (!open) return null
+  return createPortal(
+    <div className="fixed inset-0 z-60 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
+      <div className="relative bg-white rounded-lg shadow-lg w-full max-w-sm p-5 z-10">
+        <h3 className="text-lg font-semibold">{title}</h3>
+        <p className="text-sm text-slate-600 mt-2">{message}</p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button onClick={onCancel} className="px-4 py-2 border rounded-lg">Cancel</button>
+          <button onClick={onConfirm} className="px-4 py-2 bg-red-600 text-white rounded-lg">Delete</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
 /* ===== Main page (keeps your gpState-driven students) ===== */
 export default function StudentsPage() {
   const [gpState, setGpState] = useState(() => readState())
@@ -96,6 +176,38 @@ export default function StudentsPage() {
   const [remoteStudents, setRemoteStudents] = useState([])
   const [loadingRemote, setLoadingRemote] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
+
+  // confirm dialog state (reusable for delete/remove)
+  const [confirmState, setConfirmState] = useState({ open: false, action: null, payload: null })
+  // action: 'delete' | 'removeFromProjects'
+  function openConfirm(action, payload) {
+    setConfirmState({ open: true, action, payload })
+  }
+  function closeConfirm() {
+    setConfirmState({ open: false, action: null, payload: null })
+  }
+
+  // edit modal
+  const [editStudent, setEditStudent] = useState(null)
+  function openEdit(student) {
+    setEditStudent(student)
+  }
+  function closeEdit() {
+    setEditStudent(null)
+  }
+
+  // Toast state (simple single visible toast)
+  const [toast, setToast] = useState(null)
+  // toast shape: { id, type: 'success'|'error'|'info', title?, message? }
+
+  function showToast({ type = "info", title = "", message = "", duration = 4000 }) {
+    const id = String(Date.now()) + Math.random().toString(36).slice(2, 7)
+    const t = { id, type, title, message }
+    setToast(t)
+    setTimeout(() => {
+      setToast((cur) => (cur && cur.id === id ? null : cur))
+    }, duration)
+  }
 
   useEffect(() => {
     // socket to listen for server-side changes (if available)
@@ -152,15 +264,15 @@ export default function StudentsPage() {
   const students = useMemo(() => {
     // build students from gpState.projects (existing logic)
     const map = {}
-      ; (gpState.projects || []).forEach((p) => {
-        ; (p.members || []).forEach((m) => {
-          if (!map[m]) map[m] = { id: m, name: m.split("@")[0], email: m, role: "student", projects: new Set(), skills: [] }
-          map[m].projects.add(p.id)
-        })
-          ; (p.tasks || []).forEach((t) => {
-            if (t.assignee && !map[t.assignee]) map[t.assignee] = { id: t.assignee, name: t.assignee.split("@")[0], email: t.assignee, role: "student", projects: new Set(), skills: [] }
-          })
+    ; (gpState.projects || []).forEach((p) => {
+      ; (p.members || []).forEach((m) => {
+        if (!map[m]) map[m] = { id: m, name: m.split("@")[0], email: m, role: "student", projects: new Set(), skills: [] }
+        map[m].projects.add(p.id)
       })
+      ; (p.tasks || []).forEach((t) => {
+        if (t.assignee && !map[t.assignee]) map[t.assignee] = { id: t.assignee, name: t.assignee.split("@")[0], email: t.assignee, role: "student", projects: new Set(), skills: [] }
+      })
+    })
     const gpArr = Object.values(map).map((s) => ({ ...s, projects: Array.from(s.projects) }))
 
     // index remote by email for merging
@@ -252,64 +364,167 @@ export default function StudentsPage() {
     const nextActive = !(current.active ?? true)
     overrides[key] = { ...(current || {}), active: nextActive }
     setGpState((s) => ({ ...s, _studentOverrides: overrides }))
+    showToast({ type: "info", title: "Status changed", message: `${email} is now ${nextActive ? "active" : "disabled"}` })
   }
 
-  function impersonate(email) {
-    alert(`Impersonation stub: now impersonating ${email} (demo)`) // UI unchanged
+  function handleImpersonate(email) {
+    // demo impersonation behaviour: show toast + could call auth endpoint / set cookie in real app
+    showToast({ type: "info", title: "Impersonation", message: `Now impersonating ${email} (demo)` })
+    // TODO: implement real impersonation flow if needed
   }
 
-  function editStudent(email) {
-    alert(`Edit student ${email} - implement UI`) // UI unchanged
+  function handleEditSave(updatedStudent) {
+    // in this demo we update local gpState overrides or remote list as appropriate
+    // If remote, ideally call backend PATCH endpoint; here we update remoteStudents locally if present
+    const email = (updatedStudent.email || "").toLowerCase()
+    setRemoteStudents((prev) => prev.map(r => (r.email && r.email.toLowerCase() === email ? { ...r, ...updatedStudent } : r)))
+    // also update gpState membership display (names)
+    setGpState((prev) => {
+      return {
+        ...prev,
+        projects: (prev.projects || []).map(p => ({
+          ...p,
+          members: (p.members || []).map(m => m === updatedStudent.id ? updatedStudent.email : m)
+        }))
+      }
+    })
+    closeEdit()
+    showToast({ type: "success", title: "Saved", message: `${updatedStudent.name} updated (demo)` })
   }
 
-  function removeFromAllProjects(email) {
-    if (!confirm(`Remove ${email} from all projects? This will delete their membership (demo).`)) return
-    setGpState((prev) => ({ ...prev, projects: prev.projects.map((p) => ({ ...p, members: (p.members || []).filter((m) => m !== email) })) }))
-  }
-
-  // Admin calls to backend (optional). If backend unreachable, show alerts.
   async function adminAddStudent(payload) {
+    console.log("[adminAddStudent] payload:", payload);
     try {
       const res = await fetch(`${BACKEND_API}/api/students`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
-      })
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "\u200b")
-        throw new Error(txt || "Failed to add student")
+      });
+
+      console.log("[adminAddStudent] response.status:", res.status, res.statusText);
+
+      // try to parse json, otherwise text
+      let bodyText;
+      try {
+        bodyText = await res.clone().json();
+        console.log("[adminAddStudent] response.json():", bodyText);
+      } catch (e) {
+        bodyText = await res.text();
+        console.log("[adminAddStudent] response.text():", bodyText);
       }
-      await fetchRemoteStudents()
-      setShowAddModal(false)
-      alert("Student added.")
+
+      if (!res.ok) {
+        // show the backend message if any
+        const msg = (typeof bodyText === "string" && bodyText.trim()) ? bodyText : JSON.stringify(bodyText);
+        throw new Error(msg || `Failed to add student (status ${res.status})`);
+      }
+
+      await fetchRemoteStudents();
+      setShowAddModal(false);
+      showToast({ type: "success", title: "Student added", message: `${payload.name} (${payload.email}) was added.` });
+
     } catch (e) {
-      console.error(e)
-      alert("Failed to add student (check backend).")
+      console.error("[adminAddStudent] error:", e);
+      showToast({ type: "error", title: "Add failed", message: e.message || "Failed to add student (check backend)." });
     }
   }
 
-  async function adminDeleteStudent(student) {
+  // admin delete confirmed (called by ConfirmDialog)
+  async function adminDeleteStudentConfirmed() {
+    const student = confirmState.payload
     if (!student || !student.email) {
-      alert("Cannot delete this student from backend (missing id/email).")
+      showToast({ type: "error", title: "Delete failed", message: "Cannot delete (missing id/email)." });
+      closeConfirm();
+      return;
+    }
+    try {
+      const id = student.id || student.email;
+      const res = await fetch(`${BACKEND_API}/api/students/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(txt || "delete failed");
+      }
+      await fetchRemoteStudents();
+      showToast({ type: "success", title: "Deleted", message: `${student.name || student.email} deleted.` });
+    } catch (e) {
+      console.error("[adminDeleteStudentConfirmed] error:", e);
+      showToast({ type: "error", title: "Delete failed", message: e.message || "Failed to delete student (check backend)." });
+    } finally {
+      closeConfirm();
+    }
+  }
+
+  // remove from projects confirmed (called by ConfirmDialog)
+  function removeFromAllProjectsConfirmed() {
+    const email = confirmState.payload
+    if (!email) {
+      showToast({ type: "error", title: "Remove failed", message: "Missing email." })
+      closeConfirm()
       return
     }
-    if (!confirm(`Delete ${student.name || student.email} from backend? This is irreversible.`)) return
-    try {
-      const id = student.id || student.email
-      const res = await fetch(`${BACKEND_API}/api/students/${id}`, { method: "DELETE" })
-      if (!res.ok) throw new Error("delete failed")
-      await fetchRemoteStudents()
-      alert("Student deleted.")
-    } catch (e) {
-      console.error(e)
-      alert("Failed to delete student (check backend).")
-    }
+    setGpState((prev) => ({ ...prev, projects: prev.projects.map((p) => ({ ...p, members: (p.members || []).filter((m) => m !== email) })) }))
+    closeConfirm()
+    showToast({ type: "success", title: "Removed", message: `${email} removed from all projects.` })
   }
 
   /* ---------- Render ---------- */
   return (
     /* ====== Full-width colored glossy background ====== */
     <div className="students-page-bg">
+      {/* Toast container (top-right) */}
+      <div aria-live="polite" className="fixed top-6 right-6 z-50">
+        {toast && (
+          <div className="max-w-sm w-full">
+            <div
+              className={`pointer-events-auto rounded-lg shadow-lg ring-1 ring-black/5 overflow-hidden transform transition-all ${
+                toast.type === "success" ? "bg-emerald-600 text-white" :
+                toast.type === "error" ? "bg-red-600 text-white" : "bg-white text-slate-900"
+              }`}
+              role="status"
+            >
+              <div className="p-3 flex gap-3 items-start">
+                <div className="flex-shrink-0 mt-0.5">
+                  {toast.type === "success" ? (
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : toast.type === "error" ? (
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01" />
+                    </svg>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  {toast.title && <div className="text-sm font-semibold">{toast.title}</div>}
+                  <div className={`mt-1 text-sm ${toast.type === "success" || toast.type === "error" ? "text-white/90" : "text-slate-700"}`}>
+                    {toast.message}
+                  </div>
+                </div>
+
+                <div className="flex-shrink-0 self-start">
+                  <button
+                    onClick={() => setToast(null)}
+                    className={`inline-flex rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                      toast.type === "success" || toast.type === "error" ? "text-white/90 focus:ring-white/40" : "text-slate-400 focus:ring-slate-200"
+                    }`}
+                    aria-label="Close notification"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Centered page content area */}
       <div className="p-8 max-w-7xl mx-auto students-page">
 
@@ -318,7 +533,7 @@ export default function StudentsPage() {
           <div>
             <h2 className="text-2xl font-semibold text-slate-800">Students</h2>
             <p className="text-sm text-slate-500 mt-1">
-              Manage enrolled users, their projects, and participation. Remote students (from backend) are merged with local demo data.
+              Manage enrolled users, their projects, and participation.
             </p>
           </div>
 
@@ -346,7 +561,9 @@ export default function StudentsPage() {
                   })
                   return next
                 })
+                showToast({ type: "success", title: "Imported", message: `${(newStudents || []).length} rows imported (demo)` })
               }}
+              showToast={showToast}
             />
 
             {/* Search box */}
@@ -416,7 +633,7 @@ export default function StudentsPage() {
             </div>
 
             <div className="ml-auto text-sm text-slate-500">
-              Showing {filtered.length} students ({remoteStudents.length} from backend)
+              Showing {filtered.length} students 
             </div>
           </div>
 
@@ -443,10 +660,10 @@ export default function StudentsPage() {
                     student={s}
                     gpState={gpState}
                     onToggleActive={toggleStudentActive}
-                    onImpersonate={impersonate}
-                    onEdit={editStudent}
-                    onRemove={removeFromAllProjects}
-                    onAdminDelete={adminDeleteStudent}
+                    onImpersonate={handleImpersonate}
+                    onEdit={(st) => openEdit(st)}
+                    onRemove={(email) => openConfirm("removeFromProjects", email)}
+                    onAdminDelete={(st) => openConfirm("delete", st)}
                     isRemote={!!s.fromRemote}
                   />
                 ))}
@@ -482,6 +699,23 @@ export default function StudentsPage() {
       </div>
       {/* End centered page content */}
       {showAddModal && <AddStudentModal onClose={() => setShowAddModal(false)} onAdd={adminAddStudent} />}
+
+      {/* Edit modal */}
+      {editStudent && <EditStudentModal student={editStudent} onClose={closeEdit} onSave={handleEditSave} />}
+
+      {/* Confirm dialog (delete / remove actions) */}
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.action === "delete" ? `Delete ${confirmState.payload?.name || confirmState.payload?.email}?` : `Remove ${confirmState.payload || ""} from projects?`}
+        message={confirmState.action === "delete"
+          ? `Delete ${confirmState.payload?.name || confirmState.payload?.email} from backend? This action is irreversible.`
+          : `Remove ${confirmState.payload || ""} from all projects? This cannot be undone in demo data.`}
+        onConfirm={() => {
+          if (confirmState.action === "delete") adminDeleteStudentConfirmed()
+          else if (confirmState.action === "removeFromProjects") removeFromAllProjectsConfirmed()
+        }}
+        onCancel={closeConfirm}
+      />
     </div>
     /* End glossy background */
   )
@@ -494,20 +728,13 @@ function StudentRow({ student, gpState, onToggleActive, onImpersonate, onEdit, o
 
   const assignedTasks = useMemo(() => {
     const tasks = []
-      ; (gpState.projects || []).forEach((p) => {
-        ; (p.tasks || []).forEach((t) => {
-          if (t.assignee === student.email) tasks.push({ ...t, projectTitle: p.title })
-        })
+    ; (gpState.projects || []).forEach((p) => {
+      ; (p.tasks || []).forEach((t) => {
+        if (t.assignee === student.email) tasks.push({ ...t, projectTitle: p.title })
       })
+    })
     return tasks
   }, [gpState, student.email])
-
-  // kept for potential future UI badges (no UI change now)
-  // const completedPct = useMemo(() => {
-  //   if (!assignedTasks.length) return 0
-  //   const done = assignedTasks.filter((t) => t.status === "done").length
-  //   return Math.round((done / assignedTasks.length) * 100)
-  // }, [assignedTasks])
 
   return (
     <>
@@ -546,7 +773,7 @@ function StudentRow({ student, gpState, onToggleActive, onImpersonate, onEdit, o
         </td>
       </motion.tr>
 
-      {open && <StudentDetailDrawer student={student} assignedTasks={assignedTasks} onClose={() => setOpen(false)} onToggleActive={() => onToggleActive(student.email)} onImpersonate={() => onImpersonate(student.email)} onEdit={() => onEdit(student.email)} onRemove={() => onRemove(student.email)} />}
+      {open && <StudentDetailDrawer student={student} assignedTasks={assignedTasks} onClose={() => setOpen(false)} onToggleActive={() => onToggleActive(student.email)} onImpersonate={() => onImpersonate(student.email)} onEdit={() => onEdit(student)} onRemove={() => onRemove(student.email)} />}
     </>
   )
 }
@@ -577,11 +804,12 @@ function StudentDetailDrawer({
         exit={{ x: 420 }}
         transition={{ type: "spring", stiffness: 260, damping: 26 }}
         className="StudentDetailDrawer p-6 relative bg-white w-full max-w-md shadow-lg"
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
+        {/* Close button - moved slightly so it doesn't overlap the action buttons */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-lg"
+          className="absolute top-3 right-3 text-slate-400 hover:text-slate-700 text-lg z-20"
           aria-label="Close"
         >
           &times;
@@ -602,16 +830,19 @@ function StudentDetailDrawer({
             </div>
           </div>
 
-          <div className="ml-auto flex gap-2">
+          {/* Action buttons placed in separate container to prevent overlap with close */}
+          <div className="ml-auto flex gap-2 items-start">
             <button
               className="px-3 py-1 border rounded text-sm hover:bg-slate-50 transition"
               onClick={onEdit}
+              title="Edit student"
             >
               <Edit2 className="w-4 h-4 inline mr-1" /> Edit
             </button>
             <button
               className="px-3 py-1 border rounded text-sm hover:bg-slate-50 transition"
               onClick={onToggleActive}
+              title="Toggle active"
             >
               <UserX className="w-4 h-4 inline mr-1" /> Toggle
             </button>
@@ -652,13 +883,13 @@ function StudentDetailDrawer({
         {/* Footer Buttons */}
         <div className="mt-8 flex gap-3">
           <button
-            onClick={onImpersonate}
+            onClick={() => onImpersonate(student.email)}
             className="footer-btn primary px-4 py-2 bg-emerald-600 text-white rounded-lg"
           >
             Impersonate
           </button>
           <button
-            onClick={onRemove}
+            onClick={() => onRemove(student.email)}
             className="footer-btn secondary border px-4 py-2 rounded-lg"
           >
             Remove from projects
@@ -673,7 +904,7 @@ function StudentDetailDrawer({
 
 /* ===== ImportCsvButton / simpleCsvParse (unchanged UI, minor safety) ===== */
 
-function ImportCsvButton({ onImport }) {
+function ImportCsvButton({ onImport, showToast }) {
   const fileRef = React.useRef(null)
 
   function handleFile(e) {
@@ -690,7 +921,9 @@ function ImportCsvButton({ onImport }) {
       }))
       onImport(rows)
       if (fileRef.current) fileRef.current.value = null
-      alert(`${rows.length} rows imported (demo)`)
+      if (typeof showToast === "function") {
+        showToast({ type: "success", title: "Imported", message: `${rows.length} rows imported (demo)` })
+      }
     }
     reader.readAsText(f)
   }
