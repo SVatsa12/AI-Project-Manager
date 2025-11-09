@@ -2,6 +2,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Users, Calendar } from "lucide-react";
 
+
+
 // A helper function to derive percentage directly from the status
 function getProgressPercentageFromStatus(status) {
   switch (status) {

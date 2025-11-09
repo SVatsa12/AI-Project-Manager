@@ -1,6 +1,10 @@
 // src/components/ProjectTabs.jsx
 import React, { useState, useEffect, useRef, useMemo } from "react"
 import { motion } from "framer-motion"
+
+
+
+
 import {
   Search,
   Filter,
@@ -15,6 +19,8 @@ import {
   Users,
   Edit3,
 } from "lucide-react"
+import ProjectCard from "../components/ProjectCard";
+
 
 /* ConfirmModal - small reusable confirm dialog */
 function ConfirmModal({
@@ -139,6 +145,7 @@ export default function ProjectTabs(props) {
   const [clearing, setClearing] = useState(false)
   const [taskView, setTaskView] = useState("all") // "all" | "todo" | "inprogress" | "done"
   const [updating, setUpdating] = useState(false) // moved from inside task renderer
+  
 
 
   // near other useState calls
@@ -385,12 +392,17 @@ const handleProgressChange = async (projectId, newStatus) => {
                         >
                           Chat
                         </button>
+                        {/* <button
+                        onClick={() => } >
+                           Manage
+                           </button> */}
                         <button
                           onClick={() => openLeaveModal(p)}
                           className="px-3 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50 transition"
                         >
                           Leave
                         </button>
+  
                       </>
                     ) : (
                       <button
