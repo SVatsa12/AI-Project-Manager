@@ -21,6 +21,7 @@ const { Server: IOServer } = require('socket.io');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const connectDB = require('./config/db');
+const studentsRouter = require('./routes/students');
 puppeteerExtra.use(StealthPlugin())
 console.log('SCRAPER_PROVIDER=', process.env.SCRAPER_PROVIDER, ' key set=', !!process.env.SCRAPER_API_KEY);
 const app = express()
@@ -29,16 +30,7 @@ app.use(cors())
 app.use(express.json())
 app.use(morgan("tiny"))
 app.use("/api/allocator", allocatorRouter)
-app.use("/api/auth", authRouter)
-
-// mount students router (ensure file exists at routes/students.js)
-let studentsRouter
-try {
-  studentsRouter = require("./routes/students")
-  app.use("/api/students", studentsRouter)
-} catch (e) {
-  console.warn("routes/students not found or failed to load; continuing without it.", e.message)
-}
+app.use("/api/auth", authRouter)  
 
 const parser = new Parser({ timeout: 15000 })
 const limiter = rateLimit({
