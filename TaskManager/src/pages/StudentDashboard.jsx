@@ -4,6 +4,7 @@ import { useAuth } from "../auth/AuthContext"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../components/SidebarStudent"
 import { motion } from "framer-motion"
+import ProjectCard from "../components/ProjectCard";
 import {
   ClipboardList,
   Users,
