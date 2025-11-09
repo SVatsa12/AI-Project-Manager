@@ -1,159 +1,95 @@
 // Server/routes/students.js
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const crypto = require("crypto");
-const bcrypt = require("bcrypt");
-const User = require("../models/User"); // adjust path/casing if needed
+const User = require('../models/User');
+const authMiddleware = require('../middleware/auth');
+const bcrypt = require('bcrypt');
 
-// helper to emit students updated safely
-function emitStudentsUpdated(req, payload = {}) {
+// GET all students - Admin only
+router.get('/', authMiddleware, async (req, res) => {
   try {
-    const io =
-      (req && req.app && req.app.locals && req.app.locals.io) ||
-      (req && req.app && req.app.get && req.app.get("io"));
-    if (io) {
-      io.emit("students:updated", payload);
+    const user = req.user;
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
     }
+
+    // Find all users with role 'student', exclude password
+    const students = await User.find({ role: 'student' })
+      .select('-passwordHash')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({ ok: true, students });
   } catch (e) {
-    console.warn("emitStudentsUpdated failed:", e);
-  }
-}
-
-// utility to remove sensitive fields before returning user objects
-function safeUser(u) {
-  if (!u) return u;
-  const obj = u.toObject ? u.toObject() : { ...u };
-  delete obj.passwordHash;
-  return obj;
-}
-
-// GET /api/students
-router.get("/", async (req, res) => {
-  console.info("[students] GET / - fetching students");
-  try {
-    const students = await User.find({ role: "student" }).sort({ createdAt: -1 }).lean();
-    // strip sensitive fields
-    const safe = students.map((s) => {
-      const copy = { ...s };
-      delete copy.passwordHash;
-      return copy;
-    });
-    return res.json(safe);
-  } catch (err) {
-    console.error("[students] GET error:", err);
-    return res.status(500).json({ ok: false, error: "server error" });
+    console.error('Get students error:', e);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// POST /api/students  (admin creates student)
-router.post("/", async (req, res) => {
-  console.info("[students] POST / payload:", req.body);
+// POST create student manually - Admin only
+router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { name, email, skills = [], role = "student" } = req.body || {};
-    if (!email || !name) return res.status(400).json({ ok: false, error: "name and email required" });
+    const user = req.user;
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
 
-    const emailNorm = String(email).toLowerCase().trim();
+    const { name, email, password = 'defaultPassword123' } = req.body;
+    
+    if (!name || !email) {
+      return res.status(400).json({ message: 'Name and email are required' });
+    }
 
-    // check duplicate
-    const existing = await User.findOne({ email: emailNorm });
-    if (existing) return res.status(409).json({ ok: false, error: "user exists" });
+    // Check if student already exists
+    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (existing) {
+      return res.status(409).json({ message: 'Student with this email already exists' });
+    }
 
-    // generate a temporary password and hash it
-    const tempPassword = crypto.randomBytes(6).toString("hex"); // 12 hex chars
-    const passwordHash = await bcrypt.hash(tempPassword, 10);
-
-    const u = new User({
-      name: String(name).trim(),
-      email: emailNorm,
-      skills: Array.isArray(skills)
-        ? skills
-        : typeof skills === "string"
-        ? skills.split(",").map((s) => s.trim()).filter(Boolean)
-        : [],
-      role,
+    // Create new student
+    const passwordHash = await bcrypt.hash(password, 10);
+    const newStudent = new User({
+      name,
+      email: email.toLowerCase(),
       passwordHash,
-      createdAt: new Date(),
+      role: 'student'
     });
 
-    const saved = await u.save();
+    await newStudent.save();
 
-    // emit to socket listeners
-    emitStudentsUpdated(req, { action: "created", id: saved._id, email: saved.email });
-    console.info(`[students] created ${saved.email} id=${saved._id} tempPassword=${tempPassword}`);
+    // Return student without password
+    const studentData = {
+      _id: newStudent._id,
+      name: newStudent.name,
+      email: newStudent.email,
+      role: newStudent.role,
+      createdAt: newStudent.createdAt
+    };
 
-    // return safe user (no passwordHash)
-    return res.status(201).json({ ok: true, user: safeUser(saved) });
-  } catch (err) {
-    console.error("[students] POST error:", err);
-    return res.status(500).json({ ok: false, error: err.message || "server error" });
+    res.status(201).json({ ok: true, student: studentData });
+  } catch (e) {
+    console.error('Create student error:', e);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// DELETE /api/students/:id
-router.delete("/:id", async (req, res) => {
-  console.info("[students] DELETE", req.params.id);
+// DELETE student - Admin only
+router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    const id = req.params.id;
-    // allow deleting by id; if client passed email as id, attempt to handle it
-    let doc;
-    if (/^[0-9a-fA-F]{24}$/.test(String(id))) {
-      doc = await User.findByIdAndDelete(id);
-    } else {
-      doc = await User.findOneAndDelete({ email: String(id).toLowerCase().trim() });
-    }
-    emitStudentsUpdated(req, { action: "deleted", id });
-    return res.json({ ok: true, deleted: !!doc });
-  } catch (err) {
-    console.error("[students] DELETE error:", err);
-    return res.status(500).json({ ok: false, error: err.message });
-  }
-});
-
-// POST /api/students/importcsv
-// Accepts { rows: [{ email, name, skills }] }
-router.post("/importcsv", async (req, res) => {
-  console.info("[students] POST /importcsv rows:", Array.isArray(req.body.rows) ? req.body.rows.length : typeof req.body.rows);
-  try {
-    const rows = req.body.rows;
-    if (!Array.isArray(rows)) return res.status(400).json({ ok: false, error: "rows must be an array" });
-
-    let created = 0;
-    const createdList = [];
-
-    for (const r of rows) {
-      const email = (r.email || "").toString().toLowerCase().trim();
-      if (!email) continue;
-      const exists = await User.findOne({ email });
-      if (exists) continue;
-
-      // generate temp password + hash for each created user
-      const tempPassword = crypto.randomBytes(6).toString("hex");
-      const passwordHash = await bcrypt.hash(tempPassword, 10);
-
-      const u = new User({
-        name: r.name || email.split("@")[0],
-        email,
-        skills: Array.isArray(r.skills)
-          ? r.skills
-          : typeof r.skills === "string"
-          ? r.skills.split(",").map((s) => s.trim()).filter(Boolean)
-          : [],
-        role: "student",
-        passwordHash,
-        createdAt: new Date(),
-      });
-
-      const saved = await u.save();
-      created++;
-      createdList.push({ id: saved._id, email: saved.email });
-      console.info(`[students][importcsv] created ${saved.email} tempPassword=${tempPassword}`);
+    const user = req.user;
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
     }
 
-    emitStudentsUpdated(req, { action: "import", created });
-    return res.json({ ok: true, created, createdList });
-  } catch (err) {
-    console.error("[students] importcsv error:", err);
-    return res.status(500).json({ ok: false, error: err.message });
+    const student = await User.findByIdAndDelete(req.params.id);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    res.json({ ok: true, message: 'Student deleted successfully' });
+  } catch (e) {
+    console.error('Delete student error:', e);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
