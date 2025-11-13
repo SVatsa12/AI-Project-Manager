@@ -15,9 +15,8 @@ export function CompetitionsProvider({ children }) {
 
   async function loadPersisted() {
     try {
-      const res = await fetch(`${BACKEND_API}/api/competitions/persisted`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`${BACKEND_API}/api/competitions/persisted`, { headers });
       if (!res.ok) {
         console.warn("Failed to fetch persisted competitions", res.status);
         return;
@@ -31,12 +30,11 @@ export function CompetitionsProvider({ children }) {
 
   async function createCompetition(payload) {
     try {
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
       const res = await fetch(`${BACKEND_API}/api/competitions/persisted`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
+        headers,
         body: JSON.stringify(payload),
       });
       const js = await res.json();
@@ -51,6 +49,7 @@ export function CompetitionsProvider({ children }) {
 
   async function enroll(competitionId) {
     if (!token) throw new Error("Not authenticated");
+    // optimistic update
     setCompetitions((prev) =>
       prev.map((c) => (String(c._id) === String(competitionId) ? { ...c, registeredCount: (c.registeredCount || 0) + 1 } : c))
     );
@@ -61,6 +60,7 @@ export function CompetitionsProvider({ children }) {
       });
       const js = await res.json();
       if (!res.ok) {
+        // rollback
         setCompetitions((prev) =>
           prev.map((c) => (String(c._id) === String(competitionId) ? { ...c, registeredCount: Math.max(0, (c.registeredCount || 1) - 1) } : c))
         );
@@ -78,6 +78,7 @@ export function CompetitionsProvider({ children }) {
 
   async function unenroll(competitionId) {
     if (!token) throw new Error("Not authenticated");
+    // optimistic update
     setCompetitions((prev) =>
       prev.map((c) => (String(c._id) === String(competitionId) ? { ...c, registeredCount: Math.max(0, (c.registeredCount || 1) - 1) } : c))
     );
@@ -88,6 +89,7 @@ export function CompetitionsProvider({ children }) {
       });
       const js = await res.json();
       if (!res.ok) {
+        // rollback
         setCompetitions((prev) =>
           prev.map((c) => (String(c._id) === String(competitionId) ? { ...c, registeredCount: (c.registeredCount || 0) + 1 } : c))
         );
@@ -117,7 +119,6 @@ export function CompetitionsProvider({ children }) {
       });
       const js = await res.json();
       if (!res.ok) throw new Error(js.error || "enroll-as failed");
-      // reconcile state
       if (js.registeredCount !== undefined) {
         setCompetitions((prev) => prev.map((c) => (String(c._id) === String(competitionId) ? { ...c, registeredCount: js.registeredCount } : c)));
       }
@@ -128,56 +129,107 @@ export function CompetitionsProvider({ children }) {
     }
   }
 
+  // Socket setup + lifecycle
   useEffect(() => {
-    const socket = ioClient(BACKEND_WS, {
+    // Cleanup existing socket if present
+    if (socketRef.current) {
+      try {
+        socketRef.current.off(); // remove listeners
+        socketRef.current.disconnect();
+      } catch (err) {
+        // ignore
+      }
+      socketRef.current = null;
+    }
+
+    // build options — allow polling fallback so environments that can't do websocket still work
+    const opts = {
       auth: { token: token || "" },
-      transports: ['websocket'],
-    });
+      transports: ["polling", "websocket"],
+      autoConnect: true,
+      reconnection: true,
+    };
+
+    const socket = ioClient(BACKEND_WS, opts);
     socketRef.current = socket;
 
-    socket.on('competition:created', (payload) => {
+    // listeners
+    const onConnect = () => {
+      console.log("[socket] connected", socket.id);
+    };
+    const onConnectError = (err) => {
+      console.warn("[socket] connect_error", err && (err.message || err));
+    };
+    const onDisconnect = (reason) => {
+      console.log("[socket] disconnected", reason);
+    };
+
+    const onCompetitionCreated = (payload) => {
       if (!payload) return;
-      setCompetitions(prev => {
-        if (prev.some(p => String(p._id) === String(payload._id))) return prev;
+      setCompetitions((prev) => {
+        if (prev.some((p) => String(p._id) === String(payload._id))) return prev;
         return [payload, ...prev];
       });
-    });
+    };
 
-    socket.on('competition:enrollment', (payload) => {
+    const onCompetitionEnrollment = (payload) => {
       if (!payload || !payload.competitionId) return;
       const id = String(payload.competitionId);
-      setCompetitions(prev => prev.map(c => {
-        if (String(c._id) === id) {
-          return {
-            ...c,
-            registeredCount: payload.registeredCount !== undefined ? payload.registeredCount : (c.registeredCount || 0) + (payload.action === 'enrolled' ? 1 : -1)
-          };
-        }
-        return c;
-      }));
-    });
+      setCompetitions((prev) =>
+        prev.map((c) => {
+          if (String(c._id) === id) {
+            return {
+              ...c,
+              registeredCount:
+                payload.registeredCount !== undefined ? payload.registeredCount : (c.registeredCount || 0) + (payload.action === "enrolled" ? 1 : -1),
+            };
+          }
+          return c;
+        })
+      );
+    };
 
+    socket.on("connect", onConnect);
+    socket.on("connect_error", onConnectError);
+    socket.on("disconnect", onDisconnect);
+    socket.on("competition:created", onCompetitionCreated);
+    socket.on("competition:enrollment", onCompetitionEnrollment);
+
+    // cleanup on unmount or token change
     return () => {
-      try { socket.disconnect(); } catch (e) {}
+      try {
+        socket.off("connect", onConnect);
+        socket.off("connect_error", onConnectError);
+        socket.off("disconnect", onDisconnect);
+        socket.off("competition:created", onCompetitionCreated);
+        socket.off("competition:enrollment", onCompetitionEnrollment);
+        socket.disconnect();
+      } catch (err) {
+        // ignore
+      }
       socketRef.current = null;
     };
-  }, [token]);
+    // re-run when token (auth) changes so socket is re-authenticated
+  }, [token, BACKEND_WS]);
 
+  // initial load or reload when token changes
   useEffect(() => {
     loadPersisted();
   }, [token]);
 
   return (
-    <CompetitionsContext.Provider value={{
-      competitions,
-      loadPersisted,
-      createCompetition,
-      enroll,
-      unenroll,
-      enrollAs,
-      socket: socketRef.current,
-      refresh: loadPersisted
-    }}>
+    <CompetitionsContext.Provider
+      value={{
+        competitions,
+        loadPersisted,
+        createCompetition,
+        enroll,
+        unenroll,
+        enrollAs,
+        socket: socketRef.current,
+        refresh: loadPersisted,
+      }}
+    >
       {children}
     </CompetitionsContext.Provider>
   );

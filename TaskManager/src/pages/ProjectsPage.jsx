@@ -129,28 +129,95 @@ function ProjectCard({ p, onView, onQuickAddTask, onJoin, onLeave, currentEmail,
 */
 function CreateProjectModal({ onClose, onCreate, template }) {
   const [title, setTitle] = useState(template?.title || "")
+  const [startDate, setStartDate] = useState(template?.startDate || "")
+  const [endDate, setEndDate] = useState(template?.deadline || "")
+  const [techStack, setTechStack] = useState(template?.techStack || "")
+  const [maxMembers, setMaxMembers] = useState(template?.maxMembers || "")
   const [desc, setDesc] = useState(template?.description || "")
-  const [deadline, setDeadline] = useState(template?.deadline || "")
-  const [members, setMembers] = useState((template?.members || []).join(", "))
 
   function submit() {
-    if (!title) return alert("Add a title")
-    onCreate({ title, description: desc, deadline, members })
+    if (!title) return alert("Please enter a project title")
+    // Keep compatibility with existing createProject signature.
+    // createProject expects { title, description, deadline, members }
+    onCreate({
+      title,
+      description: desc,
+      deadline: endDate,
+      members: "", // student modal doesn't accept members directly in the first screenshot
+      // include extra meta for potential future use
+      startDate,
+      techStack,
+      maxMembers,
+    })
   }
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-white rounded-2xl p-6 shadow-xl w-[520px]">
-        <h3 className="text-lg font-semibold">Create Project</h3>
-        <div className="mt-4 space-y-3">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="w-full px-3 py-2 border rounded-lg" />
-          <input value={deadline} onChange={(e) => setDeadline(e.target.value)} placeholder="YYYY-MM-DD" className="w-full px-3 py-2 border rounded-lg" />
-          <input value={members} onChange={(e) => setMembers(e.target.value)} placeholder="Members (comma separated emails)" className="w-full px-3 py-2 border rounded-lg" />
-          <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Short description" className="w-full px-3 py-2 border rounded-lg" rows={3} />
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="relative bg-white rounded-2xl p-6 shadow-xl w-[560px] max-w-[92%]"
+      >
+        <div className="flex items-start justify-between">
+          <h3 className="text-lg font-semibold">Create Project</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-3">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Project Title"
+            className="w-full px-3 py-2 border rounded-lg outline-none text-sm"
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              placeholder="Start Date (YYYY-MM-DD)"
+              className="w-full px-3 py-2 border rounded-lg outline-none text-sm"
+            />
+            <input
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              placeholder="End Date (YYYY-MM-DD)"
+              className="w-full px-3 py-2 border rounded-lg outline-none text-sm"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              value={techStack}
+              onChange={(e) => setTechStack(e.target.value)}
+              placeholder="Tech Stack Used (e.g., React, Node.js, Python)"
+              className="w-full px-3 py-2 border rounded-lg outline-none text-sm"
+            />
+            <input
+              value={maxMembers}
+              onChange={(e) => setMaxMembers(e.target.value)}
+              placeholder="Max Number of Members"
+              className="w-full px-3 py-2 border rounded-lg outline-none text-sm"
+            />
+          </div>
+
+          <textarea
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            placeholder="Description of the Project"
+            className="w-full px-3 py-2 border rounded-lg outline-none text-sm"
+            rows={4}
+          />
+
           <div className="flex justify-end gap-3 pt-2">
-            <button onClick={onClose} className="px-3 py-1 border rounded-lg">Cancel</button>
-            <button onClick={submit} className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow">Create</button>
+            <button onClick={onClose} className="px-4 py-2 border rounded-lg text-sm">Cancel</button>
+            <button
+              onClick={submit}
+              className="px-4 py-2 rounded-lg text-white text-sm bg-gradient-to-r from-indigo-600 to-purple-600 shadow"
+            >
+              Create
+            </button>
           </div>
         </div>
       </motion.div>
@@ -315,7 +382,7 @@ export default function ProjectsPage() {
       title,
       description,
       deadline,
-      members: members.split(",").map((m) => m.trim()).filter(Boolean),
+      members: (members || "").split(",").map((m) => m.trim()).filter(Boolean),
       tasks: [],
       status: "active",
       createdAt: Date.now(),

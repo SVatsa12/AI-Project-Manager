@@ -1,17 +1,23 @@
-const mongoose = require('mongoose');
+// server/models/User.js
+const mongoose = require("mongoose");
 
-const EnrollmentSchema = new mongoose.Schema({
-  competitionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Competition', required: true },
-  userId: { type: String, required: true }, // storing user id (from auth token)
-  userEmail: { type: String, required: true },
-  userName: { type: String },
-  status: { type: String, default: 'registered' }, // reserved for future states
-  createdAt: { type: Date, default: Date.now },
-}, {
-  collection: 'enrollments'
-});
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    passwordHash: { type: String, required: true },
+    role: { type: String, enum: ["admin", "student"], default: "student" },
 
-// prevent duplicate enrollments
-EnrollmentSchema.index({ competitionId: 1, userId: 1 }, { unique: true });
+    // ✅ New field
+    skills: { type: [String], default: [] },
 
-module.exports = mongoose.model('Enrollment', EnrollmentSchema);
+    mustResetPassword: { type: Boolean, default: false },
+    profile: { type: Object, default: {} },
+    joinedAt: { type: Date, default: Date.now },
+  },
+  {
+    collection: "enrollments",
+  }
+);
+
+module.exports = mongoose.model("Enrollment", userSchema);

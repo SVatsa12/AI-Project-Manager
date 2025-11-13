@@ -15,7 +15,7 @@ import SignupPage from "./pages/SignupPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import StudentProjectsPage from "./pages/StudentProjectsPage"; // ✅ student projects
 import Leaderboard from "./pages/Leaderboard";
-import AdminStudents from "./pages/AdminStudents";
+import SettingsAdminPage from "./pages/SettingsAdminPage";
 
 export default function App() {
   return (
@@ -36,7 +36,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      <Route path="/admin/students" element={<AdminStudents />} />
+      {/* <Route path="/admin/students" element={<AdminStudents />} /> */}
 
       <Route
         path="/admin/students"
@@ -46,6 +46,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+       <Route path="/admin/settings" element={<SettingsAdminPage />} />
 
       {/* ✅ Admin-specific projects page */}
       <Route

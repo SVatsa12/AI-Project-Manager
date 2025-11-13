@@ -1,10 +1,35 @@
 // src/contexts/ProjectsContext.jsx
 import React, { createContext, useContext, useState, useEffect } from "react"
+import { io } from "socket.io-client"
 
 const ProjectsContext = createContext()
 
 // Use the canonical key used elsewhere in your app
 const STORAGE_key = "gp_state_v1_projects_v2"
+
+// Socket.IO connection
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:4003"
+let socket = null
+
+function getSocket() {
+  if (!socket) {
+    socket = io(BACKEND_URL, {
+      transports: ["polling", "websocket"],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5
+    })
+    
+    socket.on("connect", () => {
+      console.log("✅ Socket.IO connected:", socket.id)
+    })
+    
+    socket.on("disconnect", () => {
+      console.log("❌ Socket.IO disconnected")
+    })
+  }
+  return socket
+}
 
 function readProjectsState() {
   try {
@@ -21,7 +46,7 @@ function readProjectsState() {
   }
 }
 
-function writeProjectsState(state) {
+function writeProjectsState(state, emitSocket = true) {
   try {
     localStorage.setItem(STORAGE_key, JSON.stringify(state))
     // notify same-tab listeners (storage event doesn't fire in same tab)
@@ -30,6 +55,20 @@ function writeProjectsState(state) {
     } catch (err) {
       // ignore if CustomEvent fails in some envs
     }
+    // Broadcast to all connected clients via Socket.IO (only if local change)
+    if (emitSocket) {
+      try {
+        const socket = getSocket()
+        if (socket && socket.connected) {
+          console.log("📤 Emitting Socket.IO update")
+          socket.emit("projects:update", state)
+        } else {
+          console.warn("⚠️ Socket not connected, cannot emit update")
+        }
+      } catch (err) {
+        console.warn("Socket.IO emit failed:", err)
+      }
+    }
   } catch (e) {
     console.error("Error writing projects state", e)
   }
@@ -37,6 +76,18 @@ function writeProjectsState(state) {
 
 export function ProjectsProvider({ children }) {
   const [projectsState, setProjectsState] = useState(() => readProjectsState())
+
+  // Initialize Socket.IO connection on mount
+  useEffect(() => {
+    const socket = getSocket()
+    console.log("🔌 Initializing Socket.IO connection to:", BACKEND_URL)
+    return () => {
+      // Cleanup on unmount
+      if (socket) {
+        socket.disconnect()
+      }
+    }
+  }, [])
 
   // Save to localStorage whenever state changes (single source)
   useEffect(() => {
@@ -69,11 +120,34 @@ export function ProjectsProvider({ children }) {
       setProjectsState(parsed)
     }
 
+    // Socket.IO listener for real-time updates from other users
+    const socket = getSocket()
+    function handleSocketUpdate(data) {
+      console.log("📡 Received Socket.IO update:", data)
+      if (!data) return
+      const parsed = data
+      parsed.projects = Array.isArray(parsed.projects)
+        ? parsed.projects.map((p) => ({ ...p, studentProgress: p.studentProgress || {} }))
+        : []
+      // Update localStorage without triggering another socket emit
+      try {
+        localStorage.setItem(STORAGE_key, JSON.stringify(parsed))
+        window.dispatchEvent(new CustomEvent("gp:projects-updated", { detail: parsed }))
+      } catch (err) {
+        console.error("Error updating from socket:", err)
+      }
+      setProjectsState(parsed)
+      console.log("✅ State updated from Socket.IO")
+    }
+
+    socket.on("projects:update", handleSocketUpdate)
+
     window.addEventListener("storage", handleStorage)
     window.addEventListener("gp:projects-updated", handleCustom)
     return () => {
       window.removeEventListener("storage", handleStorage)
       window.removeEventListener("gp:projects-updated", handleCustom)
+      socket.off("projects:update", handleSocketUpdate)
     }
   }, [])
 

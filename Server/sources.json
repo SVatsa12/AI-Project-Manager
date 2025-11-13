@@ -1,26 +1,30 @@
 [
  {
   "id": "mlh-events",
-  "name": "MLH (events)",
+  "name": "MLH",
   "type": "html",
-  "url": "https://mlh.io/",
+  "url": "https://mlh.io/seasons/2025/events",
   "puppeteerSelectors": {
-    "item": ".event-wrapper",
-    "title": "h3.event-name",
-    "link": "a.event-link",
-    "desc": ".event-location"
+    "item": ".event",
+    "title": ".event-name",
+    "link": "a",
+    "desc": ".event-location",
+    "date": ".event-date",
+    "image": ".event-logo img"
   }
  },
  {
   "id": "devpost-hackathons",
-  "name": "Devpost (hackathons)",
+  "name": "Devpost",
   "type": "html",
   "url": "https://devpost.com/hackathons",
   "puppeteerSelectors": {
-    "item": ".hackathon-tile",
-    "title": "h3",
-    "link": "a.tile-link",
-    "desc": "p.challenge-description"
+    "item": ".challenge-listing",
+    "title": ".challenge-listing-title",
+    "link": "a",
+    "desc": ".challenge-listing-description",
+    "date": ".submission-period",
+    "image": ".challenge-listing-logo img"
   }
 }
 ]

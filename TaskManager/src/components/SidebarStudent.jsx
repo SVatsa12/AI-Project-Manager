@@ -54,7 +54,7 @@ export default function SidebarStudent() {
     <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
       <div className="px-6 py-5 border-b border-slate-200 flex items-center gap-3">
         <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg" />
-        <h2 className="text-lg font-semibold text-slate-800">GroupProject.AI</h2>
+        <h2 className="text-lg font-semibold text-slate-800">Student</h2>
       </div>
 
       <nav className="flex-1 p-4 space-y-1">

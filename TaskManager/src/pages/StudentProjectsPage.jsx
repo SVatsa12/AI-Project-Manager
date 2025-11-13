@@ -3,12 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, Filter, X, Loader2 } from "lucide-react";
 
 import ProjectCard from "../components/ProjectCard";
-import { useProjects } from "../contexts/ProjectsContext";
+import { useProjectsBackend } from "../contexts/ProjectsBackendContext";
 import { useAuth } from "../auth/AuthContext";
 
 export default function StudentProjectsPage() {
-  const { projects, isLoading, joinProject, leaveProject, setProjectProgress } =
-    useProjects();
+  const { projects, loading: isLoading, updateProject } = useProjectsBackend();
   const auth = useAuth();
   const userEmail = auth?.user?.email?.toLowerCase();
 
@@ -54,20 +53,41 @@ export default function StudentProjectsPage() {
       });
   }, [safeProjects, searchQuery, selectedTech, activeTab, userEmail]);
 
-  const handleJoin = (project) => {
-    if (typeof joinProject === "function") joinProject(project.id, userEmail);
-  };
-
-  const handleLeave = (project) => {
-    if (typeof leaveProject === "function") leaveProject(project.id, userEmail);
-    if (selectedProjectId === project.id) {
-      closeDrawer();
+  const handleJoin = async (project) => {
+    try {
+      const updatedMembers = [...(project.members || []), userEmail];
+      await updateProject(project.id, { members: updatedMembers });
+    } catch (err) {
+      console.error('Failed to join project:', err);
+      alert('Failed to join project. Please try again.');
     }
   };
 
-  const handleSetProgress = (projectId, status) => {
-    if (typeof setProjectProgress === "function") {
-      setProjectProgress(projectId, userEmail, status);
+  const handleLeave = async (project) => {
+    try {
+      const updatedMembers = (project.members || []).filter(m => m !== userEmail);
+      await updateProject(project.id, { members: updatedMembers });
+      if (selectedProjectId === project.id) {
+        closeDrawer();
+      }
+    } catch (err) {
+      console.error('Failed to leave project:', err);
+      alert('Failed to leave project. Please try again.');
+    }
+  };
+
+  const handleSetProgress = async (projectId, status) => {
+    try {
+      // Update user's progress status in project metadata
+      const project = safeProjects.find(p => p.id === projectId);
+      if (!project) return;
+      
+      const userProgress = project.userProgress || {};
+      userProgress[userEmail] = status;
+      
+      await updateProject(projectId, { userProgress });
+    } catch (err) {
+      console.error('Failed to update progress:', err);
     }
   };
 
@@ -222,7 +242,7 @@ const ProjectDrawer = ({
 }) => {
   if (!project) return null;
 
-  const status = project?.studentProgress?.[userEmail]?.status ?? "not_started";
+  const status = project?.userProgress?.[userEmail] ?? "not-started";
 
   return (
     <AnimatePresence>
@@ -275,9 +295,9 @@ const ProjectDrawer = ({
                 onChange={(e) => onSetProgress(project.id, e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="not_started">Not Started</option>
-                <option value="inprogress">In Progress</option>
-                <option value="almost_done">Almost Done</option>
+                <option value="not-started">Not Started</option>
+                <option value="in-progress">In Progress</option>
+                <option value="almost-done">Almost Done</option>
                 <option value="completed">Completed</option>
               </select>
             </div>
