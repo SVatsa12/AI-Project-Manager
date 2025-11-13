@@ -1,17 +1,37 @@
-// Server/middleware/auth.js
+// server/middleware/auth.js
 const jwt = require('jsonwebtoken');
 
 function authMiddleware(req, res, next) {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) return res.status(401).json({ error: 'Missing token' });
+  const authHeader = req.headers.authorization;
 
-  const token = auth.slice(7);
+  // Missing or malformed Authorization header
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or malformed token' });
+  }
+
+  // Extract token safely
+  const token = authHeader.slice(7).trim();
+
+  // Load secret with fallback (dev safe)
+  const secret =
+    process.env.JWT_SECRET ||
+    process.env.AUTH_SECRET ||
+    'dev-secret-key';
+
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = payload; // contains sub, role, email
+    // Verify token and attach payload to request
+    const payload = jwt.verify(token, secret);
+    req.user = payload; // { sub, role, email, iat, exp }
+
+    // Optional sanity check
+    if (!req.user.sub || !req.user.role) {
+      console.warn('⚠️  Token verified but missing expected fields');
+    }
+
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
+    console.warn('❌ JWT verify error:', err.message);
+    return res.status(401).json({ error: 'Invalid or expired token' });
   }
 }
 

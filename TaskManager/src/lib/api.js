@@ -11,8 +11,15 @@ export async function apiFetch(path, options = {}) {
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:4003'}${path}`, {
-    credentials: 'same-origin',
+  // Support both Vite and CRA env variables
+  const baseUrl = import.meta.env?.VITE_BACKEND_URL || process.env.REACT_APP_API_BASE || 'http://localhost:4003';
+  const fullUrl = `${baseUrl}${path}`;
+
+  console.log('[api.js] Fetching:', options.method || 'GET', fullUrl);
+  console.log('[api.js] Has token:', !!token);
+
+  const res = await fetch(fullUrl, {
+    credentials: 'omit',  // Changed from 'same-origin' for CORS
     ...options,
     headers,
   });

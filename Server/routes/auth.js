@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
-const User = require("../models/User"); // <-- Import the User model
+const Enrollment = require("../models/Enrollment"); // Use Enrollment model for all user operations
 
 // Try to use bcrypt, fallback to bcryptjs if native bcrypt isn't available
 let bcrypt;
@@ -13,10 +13,8 @@ try {
   bcrypt = require("bcryptjs");
 }
 
-// --------------------------------------------------------------------
-// CONFIG
-// --------------------------------------------------------------------
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
+const JWT_SECRET =
+  process.env.JWT_SECRET || process.env.AUTH_SECRET || "dev-secret-key";
 const TOKEN_EXPIRES = "8h";
 
 // --------------------------------------------------------------------
@@ -44,7 +42,7 @@ router.post("/login", async (req, res) => {
 
   try {
     // Find the user in the MongoDB database
-    const user = await User.findOne({ email: (email || "").toLowerCase() });
+    const user = await Enrollment.findOne({ email: (email || "").toLowerCase() });
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -91,7 +89,7 @@ router.post("/signup", async (req, res) => {
 
   try {
     // Check if user already exists in the database
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const existingUser = await Enrollment.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(409).json({ message: "User already exists" });
     }
@@ -99,27 +97,35 @@ router.post("/signup", async (req, res) => {
     // Hash the password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Create a new user instance using the Mongoose model
-    const newUser = new User({
+    // Create a new user instance using the Enrollment model (with skills field)
+    const newUser = new Enrollment({
       name,
       email: email.toLowerCase(),
-      passwordHash, // Note: The model field is passwordHash
+      passwordHash,
       role,
+      skills: [], // Initialize with empty skills array
+      profile: {}, // Initialize with empty profile object
+      joinedAt: new Date(),
     });
 
     // Save the new user to the database
     await newUser.save();
 
+    console.log(`[auth/signup] Created new ${role}:`, newUser.email);
+
     // Emit students:updated if a student was created
     try {
-      if (role === "student") emitStudentsUpdated(req);
+      if (role === "student") {
+        emitStudentsUpdated(req);
+        console.log("[auth/signup] Emitted students:updated event");
+      }
     } catch (e) {
       console.warn("Failed to emit students:updated after signup", e);
     }
 
     // Generate token
     const token = jwt.sign(
-      { sub: newUser._1d, role: newUser.role, email: newUser.email },
+      { sub: newUser._id, role: newUser.role, email: newUser.email },
       JWT_SECRET,
       { expiresIn: TOKEN_EXPIRES }
     );
@@ -153,7 +159,7 @@ router.get("/me", async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET);
 
     // Find the user in the database by their ID from the token
-    const user = await User.findById(decoded.sub).select("-passwordHash"); // .select('-passwordHash') excludes the hash
+    const user = await Enrollment.findById(decoded.sub).select("-passwordHash"); // .select('-passwordHash') excludes the hash
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -201,7 +207,7 @@ router.put("/me", async (req, res) => {
     }
 
     // Save updates
-    const updated = await User.findByIdAndUpdate(userId, updates, {
+    const updated = await Enrollment.findByIdAndUpdate(userId, updates, {
       new: true,
       runValidators: true,
       select: "-passwordHash",
@@ -209,9 +215,14 @@ router.put("/me", async (req, res) => {
 
     if (!updated) return res.status(404).json({ message: "User not found" });
 
+    console.log(`[auth/me] Updated profile for ${updated.role}:`, updated.email);
+
     // Emit students:updated if this user is a student
     try {
-      if (updated.role === "student") emitStudentsUpdated(req);
+      if (updated.role === "student") {
+        emitStudentsUpdated(req);
+        console.log("[auth/me] Emitted students:updated event after profile update");
+      }
     } catch (e) {
       console.warn("Emit after profile update failed", e);
     }

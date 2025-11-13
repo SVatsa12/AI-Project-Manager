@@ -4,12 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { Brain, Users, LineChart, Eye, EyeOff } from "lucide-react";
 
-export default function AuthModal({ open, onClose }) {
+export default function AuthModal({ open, onClose, mode: externalMode = null }) {
   const { login } = useAuth();
   const nav = useNavigate();
   const modalRef = useRef(null);
 
-  const [mode, setMode] = useState("signup"); // 'signup' | 'login'
+  // internal mode state but allow parent to override via `externalMode`
+  const [mode, setMode] = useState(externalMode || "signup"); // 'signup' | 'login'
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("student");
@@ -20,8 +21,16 @@ export default function AuthModal({ open, onClose }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
- const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4003";
+  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4003";
 
+  // Sync internal mode when parent supplies externalMode
+  useEffect(() => {
+    if (externalMode) {
+      const newMode = externalMode === "login" ? "login" : "signup";
+      setMode(newMode);
+      setError(""); // clear errors when mode changes externally
+    }
+  }, [externalMode]);
 
   useEffect(() => {
     if (open) {
@@ -88,7 +97,7 @@ export default function AuthModal({ open, onClose }) {
         try {
           await login({ email, password, remember: true });
         } catch (err) {
-          // if login fails after signup, still redirect to login
+          // if login fails after signup, still redirect to login page
           console.warn("Auto-login failed after signup:", err);
           nav("/login");
           return true;
@@ -230,7 +239,10 @@ export default function AuthModal({ open, onClose }) {
 
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setMode(mode === "signup" ? "login" : "signup")}
+                  onClick={() => {
+                    setMode((m) => (m === "signup" ? "login" : "signup"));
+                    setError("");
+                  }}
                   className="text-sm text-indigo-600 hover:underline"
                   type="button"
                 >

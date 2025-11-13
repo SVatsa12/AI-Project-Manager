@@ -21,10 +21,11 @@ import ProjectTabs from "../components/ProjectTabs"
 import EditProfileModal from "../components/EditProfileModal"
 
 // Proper ES module imports for contexts:
-import { useProjects } from "../contexts/ProjectsContext"
+import { useProjectsBackend } from "../contexts/ProjectsBackendContext"
 import { useCompetitions } from "../contexts/CompetitionsContext"
 import { useStudent } from "../contexts/StudentContext"
 import { useChat } from "../contexts/ChatContext"
+import { apiFetch } from "../lib/api"
 
 export default function StudentDashboard() {
   const { user, logout } = useAuth()
@@ -37,7 +38,7 @@ export default function StudentDashboard() {
   }, [user, navigate])
 
   // Contexts
-  const { projects, joinProject, leaveProject, addTask, updateTask } = useProjects()
+  const { projects, updateProject, addTask, updateTask } = useProjectsBackend()
   const { competitions: persistedCompetitions = [], enroll, unenroll, refresh: refreshCompetitions } = useCompetitions()
   const { profile, skills, interests, updateProfile, addSkill, removeSkill, addInterest, removeInterest } = useStudent()
   const { activeProject, setActiveProject, sendMessage, getMessages, clearChat } = useChat()
@@ -126,12 +127,23 @@ export default function StudentDashboard() {
     setShowLeaveModal(true)
   }
 
+  function closeJoinModal() {
+    setShowJoinModal(false)
+    setSelectedProject(null)
+  }
+
+  function closeLeaveModal() {
+    setShowLeaveModal(false)
+    setSelectedProject(null)
+  }
+
   async function handleJoinProject() {
     if (!selectedProject) return
 
     setIsLoading(true)
     try {
-      await joinProject(selectedProject.id, user.email)
+      const updatedMembers = [...(selectedProject.members || []), user.email]
+      await updateProject(selectedProject.id, { members: updatedMembers })
       setShowJoinModal(false)
       setSelectedProject(null)
     } catch (error) {
@@ -146,7 +158,8 @@ export default function StudentDashboard() {
 
     setIsLoading(true)
     try {
-      await leaveProject(selectedProject.id, user.email)
+      const updatedMembers = (selectedProject.members || []).filter(m => m !== user.email)
+      await updateProject(selectedProject.id, { members: updatedMembers })
       setShowLeaveModal(false)
       setSelectedProject(null)
     } catch (error) {
@@ -187,30 +200,122 @@ export default function StudentDashboard() {
     setDraggedTask(null)
   }
 
+  // Set project progress for a student
+  const setProjectProgress = async (projectId, userEmail, status) => {
+    try {
+      const project = projects.find(p => p.id === projectId)
+      if (!project) return
+
+      // userProgress is a plain object, not a Map
+      const updatedProgress = {
+        ...(project.userProgress || {}),
+        [userEmail]: status
+      }
+      
+      await updateProject(projectId, { 
+        userProgress: updatedProgress
+      })
+    } catch (error) {
+      console.error('Failed to update project progress:', error)
+    }
+  }
+
+  // Direct join/leave functions (for components that don't use modals)
+  const joinProject = async (projectId, userEmail) => {
+    try {
+      const project = projects.find(p => p.id === projectId)
+      if (!project) return
+
+      const members = project.members || []
+      if (members.includes(userEmail)) return
+      if (members.length >= project.maxMembers) {
+        throw new Error('Project is full')
+      }
+
+      await updateProject(projectId, { members: [...members, userEmail] })
+    } catch (error) {
+      console.error('Failed to join project:', error)
+      throw error
+    }
+  }
+
+  const leaveProject = async (projectId, userEmail) => {
+    try {
+      const project = projects.find(p => p.id === projectId)
+      if (!project) return
+
+      const updatedMembers = (project.members || []).filter(m => m !== userEmail)
+      await updateProject(projectId, { members: updatedMembers })
+    } catch (error) {
+      console.error('Failed to leave project:', error)
+      throw error
+    }
+  }
+
   // EditProfileModal save handler: patch profile + sync skills/interests
-  const handleSaveProfile = (data) => {
-    // update profile object
-    if (data.profile) updateProfile(data.profile)
+  const handleSaveProfile = async (data) => {
+    try {
+      // Send update to backend API
+      const updates = {
+        name: data.profile?.name || user?.name,
+        skills: data.skills || [],
+        profile: data.profile || {},
+      }
 
-    // Sync skills: remove missing, add new
-    const newSkills = data.skills || []
-    const prevSkills = skills || []
-    prevSkills.forEach((s) => {
-      if (!newSkills.includes(s)) removeSkill(s)
-    })
-    newSkills.forEach((s) => {
-      if (!prevSkills.includes(s)) addSkill(s)
-    })
+      console.log("[StudentDashboard] Updating profile:", updates)
+      console.log("[StudentDashboard] Calling: PUT /api/auth/me")
+      console.log("[StudentDashboard] Token:", localStorage.getItem('gpa_token')?.substring(0, 20) + '...')
+      
+      const result = await apiFetch("/api/auth/me", {
+        method: "PUT",
+        body: JSON.stringify(updates),
+      })
 
-    // Sync interests
-    const newInterests = data.interests || []
-    const prevInterests = interests || []
-    prevInterests.forEach((i) => {
-      if (!newInterests.includes(i)) removeInterest(i)
-    })
-    newInterests.forEach((i) => {
-      if (!prevInterests.includes(i)) addInterest(i)
-    })
+      console.log("[StudentDashboard] Profile updated successfully:", result)
+
+      // Update local context
+      if (data.profile) updateProfile(data.profile)
+
+      // Sync skills: remove missing, add new
+      const newSkills = data.skills || []
+      const prevSkills = skills || []
+      prevSkills.forEach((s) => {
+        if (!newSkills.includes(s)) removeSkill(s)
+      })
+      newSkills.forEach((s) => {
+        if (!prevSkills.includes(s)) addSkill(s)
+      })
+
+      // Sync interests
+      const newInterests = data.interests || []
+      const prevInterests = interests || []
+      prevInterests.forEach((i) => {
+        if (!newInterests.includes(i)) removeInterest(i)
+      })
+      newInterests.forEach((i) => {
+        if (!prevInterests.includes(i)) addInterest(i)
+      })
+
+      // Refresh user data from auth context
+      if (user?.refetch) {
+        await user.refetch()
+      }
+    } catch (error) {
+      console.error("[StudentDashboard] Failed to update profile:", error)
+      alert("Failed to update profile. Please try again.")
+    }
+  }
+
+  // new logout handler: call logout, navigate to landing, open large auth modal in login mode
+  async function handleLogout() {
+    try {
+      await logout?.()
+    } catch (err) {
+      console.warn("Logout error (ignored):", err)
+    } finally {
+      navigate("/")
+      window.dispatchEvent(new CustomEvent("open-auth", { detail: { mode: "login" } }))
+    }
   }
 
   return (
@@ -228,7 +333,7 @@ export default function StudentDashboard() {
 
             <motion.button
               whileTap={{ scale: 0.97 }}
-              onClick={logout}
+              onClick={handleLogout}
               className="ml-2 flex items-center gap-2 bg-white border border-slate-200 shadow-sm hover:shadow-md rounded-full px-4 py-2"
               aria-label="Logout"
             >
@@ -302,6 +407,8 @@ export default function StudentDashboard() {
               handleSendMessage={handleSendMessage}
               openJoinModal={openJoinModal}
               openLeaveModal={openLeaveModal}
+              closeJoinModal={closeJoinModal}
+              closeLeaveModal={closeLeaveModal}
               showJoinModal={showJoinModal}
               showLeaveModal={showLeaveModal}
               selectedProject={selectedProject}
@@ -312,6 +419,7 @@ export default function StudentDashboard() {
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               updateTask={updateTask}
+              setProjectProgress={setProjectProgress}
               joinProject={joinProject}
               leaveProject={leaveProject}
               enroll={enroll}
@@ -337,8 +445,8 @@ export default function StudentDashboard() {
           skills={skills}
           interests={interests}
           onClose={() => setShowEditModal(false)}
-          onSave={(data) => {
-            handleSaveProfile(data)
+          onSave={async (data) => {
+            await handleSaveProfile(data)
             setShowEditModal(false)
           }}
         />

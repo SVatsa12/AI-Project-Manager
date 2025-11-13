@@ -1,6 +1,12 @@
+// src/ui/CTA.jsx
 import React from 'react'
 
 export default function CTA() {
+  function openSignup() {
+    // Request the global auth modal to open in signup mode
+    window.dispatchEvent(new CustomEvent('open-auth', { detail: { mode: 'signup' } }))
+  }
+
   return (
     <section id="signup" className="py-20 bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
       <div className="container-max mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -11,12 +17,12 @@ export default function CTA() {
           </p>
         </div>
         <div>
-          <a
-            href="/login"
+          <button
+            onClick={openSignup}
             className="px-6 py-3 bg-white text-indigo-600 rounded-lg font-medium shadow-lg hover:scale-[1.03] transition-transform"
           >
             Get started
-          </a>
+          </button>
         </div>
       </div>
     </section>

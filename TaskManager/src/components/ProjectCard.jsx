@@ -9,10 +9,13 @@ function getProgressPercentageFromStatus(status) {
   switch (status) {
     case "completed":
       return 100;
+    case "almost-done":
     case "almost_done":
       return 85;
+    case "in-progress":
     case "inprogress":
       return 45;
+    case "not-started":
     case "not_started":
     default:
       return 0;
@@ -51,22 +54,33 @@ export default function ProjectCard({
     endDate,
     members = [],
     maxMembers = 4,
-    studentProgress = {},
+    userProgress = {},
     tasks = [],
   } = project;
 
   // This logic ensures the progress bar always reflects the current status from the project prop.
   // For this to work, the `project` prop must be up-to-date.
   let progressPct = 0;
-  if (isJoined && userEmail && studentProgress[userEmail]?.status) {
+  if (isJoined && userEmail && userProgress[userEmail]) {
     progressPct = getProgressPercentageFromStatus(
-      studentProgress[userEmail].status
+      userProgress[userEmail]
     );
   } else {
     const doneTasks = tasks.filter((t) => t.status === "done").length;
     const totalTasks = tasks.length > 0 ? tasks.length : 1;
     progressPct = Math.round((doneTasks / totalTasks) * 100);
   }
+
+  console.log('[ProjectCard] Progress calc:', {
+    projectId: project.id,
+    isJoined,
+    userEmail,
+    userProgress,
+    userProgressForUser: userProgress[userEmail],
+    tasks,
+    doneTasks: tasks.filter((t) => t.status === "done").length,
+    progressPct
+  });
 
   const tech = normalizeTechStack(techStack);
 

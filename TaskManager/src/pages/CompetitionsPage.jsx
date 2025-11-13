@@ -93,24 +93,44 @@ const ACCENTS = ["emerald", "indigo", "rose", "amber", "slate"]
 /* ---------- Visual Card (Devpost-like) with glossy wrapper ---------- */
 function CompetitionCard({ item, onToggleBookmark, bookmarked, accent = "indigo" }) {
   const thumb = item.image || item.logo || null
+  const gradients = [
+    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+    "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+    "linear-gradient(135deg, #30cfd0 0%, #330867 100%)",
+    "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
+    "linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)"
+  ]
+  const gradientIndex = (item.title || "").charCodeAt(0) % gradients.length
+  
   return (
     <motion.article
-      whileHover={{ y: -4 }}
-      className="glossy w-full overflow-hidden flex"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(0,0,0,0.12)" }}
+      transition={{ duration: 0.2 }}
+      className="glossy w-full overflow-hidden flex bg-white"
       data-accent={accent}
       style={{ alignItems: "stretch" }}
     >
       <div className="gloss-inner w-full flex">
-        {/* accent stripe */}
-        <div className="w-1" style={{ background: "transparent" }} />
-
         {/* thumbnail */}
-        <div className="flex-shrink-0 w-36 p-3 flex items-center justify-center bg-slate-50">
+        <div className="flex-shrink-0 w-44 p-4 flex items-center justify-center" style={{ background: thumb ? "#f8fafc" : gradients[gradientIndex] }}>
           {thumb ? (
-            <img src={thumb} alt={item.title} className="w-28 h-28 object-cover rounded-md" />
+            <img 
+              src={thumb} 
+              alt={item.title} 
+              className="w-full h-32 object-contain rounded-lg"
+              onError={(e) => {
+                e.target.style.display = 'none'
+                e.target.parentElement.innerHTML = `<div class="w-full h-32 rounded-lg flex items-center justify-center text-4xl font-bold text-white" style="background: ${gradients[gradientIndex]}">${(item.title || "H").slice(0,1).toUpperCase()}</div>`
+              }}
+            />
           ) : (
-            <div className="w-24 h-24 bg-emerald-100 rounded-md flex items-center justify-center text-2xl font-semibold text-emerald-700">
-              {(item.title || "E").slice(0,1).toUpperCase()}
+            <div className="w-full h-32 rounded-lg flex items-center justify-center text-4xl font-bold text-white">
+              {(item.title || "H").slice(0,1).toUpperCase()}
             </div>
           )}
         </div>
@@ -173,13 +193,6 @@ function CompetitionCard({ item, onToggleBookmark, bookmarked, accent = "indigo"
                   <Calendar className="w-4 h-4" /> Subscribe
                 </button>
               </div>
-
-              <div className="w-full flex items-center justify-end">
-                <div className="text-slate-400 text-xs flex items-center gap-2">
-                  <span>Details</span>
-                  <ArrowRightCircle className="w-5 h-5 text-emerald-500" />
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -217,17 +230,15 @@ export default function CompetitionsPage() {
       setLoading(true)
       setError(null)
       try {
-        // ===== THIS IS THE FIX =====
-        // Changed the endpoint to match the working one from your server logs.
-        const res = await fetch(`${BACKEND_API}/api/competitions/persisted`)
+        // Fetch from main competitions endpoint that aggregates external sources
+        const res = await fetch(`${BACKEND_API}/api/competitions`)
         if (!res.ok) {
           const text = await res.text().catch(() => "")
           throw new Error(`Failed to fetch competitions: ${res.status} ${text.slice(0,200)}`)
         }
         const json = await res.json()
         
-        // Add a check to see what the data structure is. The server might be returning
-        // an array directly, or an object with an 'items' property.
+        // Server returns {source: "cache|live", count: N, items: [...]}
         const competitions = json.items || json || [];
         if (mounted) setItems(competitions)
 
@@ -331,22 +342,72 @@ export default function CompetitionsPage() {
 
         {/* optional grid view (thumbnail tiles) */}
         {view === "grid" && (
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((item, idx) => {
               const accent = ACCENTS[idx % ACCENTS.length]
+              const gradients = [
+                "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+                "linear-gradient(135deg, #30cfd0 0%, #330867 100%)"
+              ]
+              const gradientIndex = (item.title || "").charCodeAt(0) % gradients.length
+              
               return (
-                <div key={item.id} className="glossy overflow-hidden shadow-sm" data-accent={accent}>
+                <motion.div 
+                  key={item.id} 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ y: -8, boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
+                  transition={{ duration: 0.2 }}
+                  className="glossy overflow-hidden shadow-sm bg-white" 
+                  data-accent={accent}
+                >
                   <div className="gloss-inner">
-                    <div className="h-40 bg-slate-100 flex items-center justify-center">
-                      {item.image ? <img src={item.image} alt={item.title} className="w-full h-full object-cover" /> : <div className="text-slate-400">No image</div>}
+                    <div className="h-48 flex items-center justify-center p-6" style={{ background: item.image ? "#f1f5f9" : gradients[gradientIndex] }}>
+                      {item.image ? (
+                        <img 
+                          src={item.image} 
+                          alt={item.title} 
+                          className="w-full h-full object-contain rounded-lg" 
+                          onError={(e) => {
+                            e.target.style.display = 'none'
+                            e.target.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center text-6xl font-bold text-white">${(item.title || "H").slice(0,1).toUpperCase()}</div>`
+                            e.target.parentElement.style.background = gradients[gradientIndex]
+                          }}
+                        />
+                      ) : (
+                        <div className="text-6xl font-bold text-white">
+                          {(item.title || "H").slice(0,1).toUpperCase()}
+                        </div>
+                      )}
                     </div>
-                    <div className="p-4">
-                      <a href={item.url} target="_blank" rel="noreferrer" className="font-semibold text-emerald-700 block">{item.title}</a>
-                      <div className="text-xs text-slate-500 mt-2">{formatDate(item.startDate)} • {item.source}</div>
+                    <div className="p-5">
+                      <a href={item.url} target="_blank" rel="noreferrer" className="font-semibold text-lg text-slate-800 hover:text-emerald-600 block line-clamp-2 mb-2">
+                        {item.title}
+                      </a>
+                      <p className="text-sm text-slate-600 line-clamp-2 mb-3">{item.description || "No description available."}</p>
+                      <div className="flex items-center justify-between text-xs text-slate-500 mb-4">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>{formatDate(item.startDate)}</span>
+                        </div>
+                        <div className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded">{item.source}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => toggleBookmark(item)} className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${bookmarks.some(b => b.id === item.id) ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
+                          {bookmarks.some(b => b.id === item.id) ? '★ Saved' : 'Save'}
+                        </button>
+                        <a href={item.url} target="_blank" rel="noreferrer" className="flex-1 px-3 py-2 rounded text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 text-center">
+                          View
+                        </a>
+                      </div>
                     </div>
                   </div>
                   <div className="gloss-shine" aria-hidden="true" />
-                </div>
+                </motion.div>
               )
             })}
           </div>

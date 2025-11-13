@@ -3,24 +3,12 @@ import React, { useEffect, useMemo, useState } from "react"
 import { PlusCircle, Trash2, Archive, CheckCircle, Users, X } from "lucide-react"
 import { motion } from "framer-motion"
 import { createPortal } from "react-dom"
+import { useProjectsBackend } from "../contexts/ProjectsBackendContext"
 import "../styles/admin-projects.css"
 
-// same storage key as student Projects so changes reflect everywhere
-const STORAGE_KEY = "gp_state_v1_projects_v2"
+// Note: All projects data now syncs through MongoDB backend via ProjectsBackendContext
 const AUDIT_KEY = "gp_state_v1_projects_v2_audit"
 const OVERLOAD_THRESHOLD = 3;
-function readState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { projects: [], meta: {} }
-    return JSON.parse(raw)
-  } catch {
-    return { projects: [], meta: {} }
-  }
-}
-function writeState(s) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(s))
-}
 function readAudit() {
   try {
     return JSON.parse(localStorage.getItem(AUDIT_KEY) || "[]")
@@ -86,58 +74,122 @@ function formatDate(dateString) {
 }
 
 
-/* ---------- CreateProjectModal ---------- */
 function CreateProjectModal({ onClose, onCreate, defaultTemplate }) {
   const [title, setTitle] = useState(defaultTemplate?.title || "")
+  const [startDate, setStartDate] = useState(defaultTemplate?.startDate || "")
+  const [endDate, setEndDate] = useState(defaultTemplate?.endDate || "")
+  const [techStack, setTechStack] = useState(defaultTemplate?.techStack || "")
+  const [maxMembers, setMaxMembers] = useState(defaultTemplate?.maxMembers || "")
   const [description, setDescription] = useState(defaultTemplate?.description || "")
-  const [deadline, setDeadline] = useState(defaultTemplate?.deadline || "")
-  const [members, setMembers] = useState((defaultTemplate?.members || []).join(", "))
+  const [submitting, setSubmitting] = useState(false)
 
-  function submit() {
-    if (!title.trim()) return alert("Please provide a title")
-    onCreate({
+  async function submit() {
+    if (submitting) return // Prevent double submission
+    if (!title) return alert("Please enter a title")
+    if (!startDate) return alert("Add a start date")
+    if (!endDate) return alert("Add an end date")
+    if (!maxMembers || isNaN(maxMembers) || parseInt(maxMembers) <= 0) return alert("Add a valid max number of members")
+    
+    // Create project with the new structure matching AdminDashboard
+    const newProject = {
       id: uid("p"),
-      title: title.trim(),
-      description: description.trim(),
-      deadline: deadline || "",
-      members: members.split(",").map((m) => m.trim()).filter(Boolean),
+      title,
+      description,
+      startDate,
+      endDate,
+      techStack,
+      maxMembers: parseInt(maxMembers),
+      members: [], // start with empty members array
       tasks: [],
       status: "active",
-      createdAt: Date.now(),
-    })
-    onClose()
+      createdAt: Date.now()
+    }
+    
+    setSubmitting(true)
+    try {
+      await onCreate(newProject)
+      onClose()
+    } catch (err) {
+      console.error('Error creating project:', err)
+      setSubmitting(false)
+    }
   }
 
   return createPortal(
-    <div className="ap-modal-overlay">
-      <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="ap-modal">
-        <div className="ap-modal-header">
-          <h3>Create Project</h3>
-          <button className="ap-icon-btn" onClick={onClose}><X /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="relative bg-white rounded-2xl p-6 shadow-xl w-[520px] max-w-[92%]"
+      >
+        <div className="flex items-start justify-between mb-4">
+          <h3 className="text-lg font-semibold">Create Project</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>
         </div>
 
-        <div className="ap-modal-body">
-          <label className="ap-label">Title</label>
-          <input className="ap-input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Project title" />
+        <div className="mt-4 space-y-3">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Project Title"
+            className="w-full px-3 py-2 border rounded-lg outline-none text-sm"
+          />
+          
+          <input
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            placeholder="Start Date (YYYY-MM-DD)"
+            className="w-full px-3 py-2 border rounded-lg outline-none text-sm"
+          />
+          
+          <input
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            placeholder="End Date (YYYY-MM-DD)"
+            className="w-full px-3 py-2 border rounded-lg outline-none text-sm"
+          />
+          
+          <input
+            value={techStack}
+            onChange={(e) => setTechStack(e.target.value)}
+            placeholder="Tech Stack Used (e.g., React, Node.js, Python)"
+            className="w-full px-3 py-2 border rounded-lg outline-none text-sm"
+          />
+          
+          <input
+            value={maxMembers}
+            onChange={(e) => setMaxMembers(e.target.value)}
+            placeholder="Max Number of Members"
+            type="number"
+            min="1"
+            className="w-full px-3 py-2 border rounded-lg outline-none text-sm"
+          />
+          
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description of the Project"
+            className="w-full px-3 py-2 border rounded-lg outline-none text-sm"
+            rows={3}
+          />
 
-          <label className="ap-label">Description</label>
-          <textarea className="ap-textarea" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
-
-          <div className="ap-row">
-            <div style={{ flex: 1 }}>
-              <label className="ap-label">Deadline</label>
-              <input className="ap-input" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
-            </div>
-            <div style={{ flex: 1, marginLeft: 12 }}>
-              <label className="ap-label">Members (comma-separated)</label>
-              <input className="ap-input" value={members} onChange={(e) => setMembers(e.target.value)} placeholder="a@x.com, b@y.com" />
-            </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button 
+              onClick={onClose} 
+              disabled={submitting}
+              className="px-4 py-2 border rounded-lg text-sm disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={submit}
+              disabled={submitting}
+              className="px-4 py-2 rounded-lg text-white text-sm bg-indigo-600 shadow hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? 'Creating...' : 'Create'}
+            </button>
           </div>
-        </div>
-
-        <div className="ap-modal-footer">
-          <button className="ap-btn ap-btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="ap-btn ap-btn-primary" onClick={submit}><PlusCircle className="icon" /> Create</button>
         </div>
       </motion.div>
     </div>,
@@ -145,15 +197,18 @@ function CreateProjectModal({ onClose, onCreate, defaultTemplate }) {
   )
 }
 
+
 /* ---------- Project Drawer ---------- */
 function ProjectDrawer({ project, onClose, onRemoveMember, onAddTask, onUpdateProject }) {
   const [taskTitle, setTaskTitle] = useState("")
   const [assignee, setAssignee] = useState("")
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
     if (!project) {
       setTaskTitle("")
       setAssignee("")
+      setShowDeleteConfirm(false)
     }
   }, [project])
 
@@ -242,12 +297,52 @@ function ProjectDrawer({ project, onClose, onRemoveMember, onAddTask, onUpdatePr
           <button className="ap-btn ap-btn-ghost" onClick={() => onUpdateProject(project.id, { status: project.status === "archived" ? "active" : "archived" })}>
             {project.status === "archived" ? "Unarchive" : "Archive"}
           </button>
-          <button className="ap-btn ap-btn-danger" onClick={() => {
-            if (window.confirm("Delete project permanently?")) onUpdateProject(project.id, { delete: true })
-          }}>
+          <button className="ap-btn ap-btn-danger" onClick={() => setShowDeleteConfirm(true)}>
             <Trash2 className="icon" /> Delete
           </button>
         </div>
+
+        {/* Delete confirmation for drawer */}
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowDeleteConfirm(false)}>
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white rounded-2xl p-6 shadow-2xl w-[400px] max-w-[92%]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900">Delete Project</h3>
+                  <p className="text-sm text-slate-600 mt-2">
+                    Are you sure you want to delete <span className="font-semibold text-slate-900">"{project.title}"</span>? This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    onUpdateProject(project.id, { delete: true })
+                    setShowDeleteConfirm(false)
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-sm"
+                >
+                  Delete Project
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </motion.div>
     </div>,
     document.body
@@ -256,17 +351,28 @@ function ProjectDrawer({ project, onClose, onRemoveMember, onAddTask, onUpdatePr
 
 /* ---------- Main AdminProjectsPage ---------- */
 export default function AdminProjectsPage() {
-  // read persisted state
-  const [state, setState] = useState(() => readState())
+  // Use backend context instead of localStorage
+  const { 
+    projects: backendProjects, 
+    loading, 
+    createProject: createProjectBackend,
+    updateProject: updateProjectBackend,
+    deleteProject: deleteProjectBackend,
+    addTask: addTaskBackend,
+    updateTask: updateTaskBackend,
+    deleteTask: deleteTaskBackend
+  } = useProjectsBackend();
+
+  // Local state for UI
   const [audit, setAudit] = useState(() => readAudit())
   const [query, setQuery] = useState("")
   const [showCreate, setShowCreate] = useState(false)
   const [drawerProject, setDrawerProject] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null) // { projectId, projectTitle }
 
-  useEffect(() => writeState(state), [state])
   useEffect(() => writeAudit(audit), [audit])
 
-  const projects = state.projects || []
+  const projects = backendProjects || []
 
   function logAction(text) {
     setAudit((s) => [{ id: uid("a"), text, ts: Date.now() }, ...s].slice(0, 300))
@@ -294,53 +400,69 @@ export default function AdminProjectsPage() {
   }, [projects, query])
 
   /* ----- CRUD / helpers ----- */
-  function createProject(project) {
-    setState((prev) => ({ ...prev, projects: [project, ...(prev.projects || [])] }))
-    logAction(`Created project "${project.title}"`)
-  }
-
-  function updateProject(projectId, patch) {
-    // If patch contains delete:true, remove it
-    if (patch.delete) {
-      const removed = (state.projects || []).find((p) => p.id === projectId)
-      setState((prev) => ({ ...prev, projects: prev.projects.filter((p) => p.id !== projectId) }))
-      logAction(`Deleted project "${removed?.title || projectId}"`)
-      if (drawerProject && drawerProject.id === projectId) setDrawerProject(null)
-      return
+  async function createProject(project) {
+    try {
+      await createProjectBackend(project);
+      logAction(`Created project "${project.title}"`);
+    } catch (err) {
+      console.error('Failed to create project:', err);
+      alert('Failed to create project. Please try again.');
     }
-
-    setState((prev) => {
-      const next = { ...prev, projects: prev.projects.map((p) => (p.id === projectId ? { ...p, ...patch } : p)) }
-      return next
-    })
-    logAction(`Updated project ${projectId}`)
   }
 
-  function addTask(projectId, task) {
-    setState((prev) => ({
-      ...prev,
-      projects: prev.projects.map((p) => (p.id === projectId ? { ...p, tasks: [...(p.tasks || []), task] } : p)),
-    }))
-    logAction(`Added task to ${projectId}`)
+  async function updateProject(projectId, patch) {
+    try {
+      // If patch contains delete:true, delete the project instead
+      if (patch.delete) {
+        const removed = projects.find((p) => p.id === projectId);
+        await deleteProjectBackend(projectId);
+        logAction(`Deleted project "${removed?.title || projectId}"`);
+        if (drawerProject && drawerProject.id === projectId) setDrawerProject(null);
+        return;
+      }
+
+      await updateProjectBackend(projectId, patch);
+      logAction(`Updated project ${projectId}`);
+    } catch (err) {
+      console.error('Failed to update project:', err);
+      alert('Failed to update project. Please try again.');
+    }
   }
 
-  function removeMember(projectId, memberEmail) {
-    setState((prev) => ({
-      ...prev,
-      projects: prev.projects.map((p) => (p.id === projectId ? { ...p, members: (p.members || []).filter((m) => m !== member.Email) } : p)),
-    }))
-    logAction(`Removed member ${memberEmail} from ${projectId}`)
-    // if the drawer is open for same project, update drawerProject so UI updates immediately
-    if (drawerProject && drawerProject.id === projectId) {
-      setDrawerProject((prev) => prev ? { ...prev, members: (prev.members || []).filter((m) => m !== memberEmail) } : prev)
+  async function addTask(projectId, task) {
+    try {
+      await addTaskBackend(projectId, { taskId: task.id, ...task });
+      logAction(`Added task to ${projectId}`);
+    } catch (err) {
+      console.error('Failed to add task:', err);
+      alert('Failed to add task. Please try again.');
+    }
+  }
+
+  async function removeMember(projectId, memberEmail) {
+    try {
+      const project = projects.find(p => p.id === projectId);
+      if (!project) return;
+      
+      const updatedMembers = (project.members || []).filter((m) => m !== memberEmail);
+      await updateProjectBackend(projectId, { members: updatedMembers });
+      logAction(`Removed member ${memberEmail} from ${projectId}`);
+      
+      // if the drawer is open for same project, update drawerProject so UI updates immediately
+      if (drawerProject && drawerProject.id === projectId) {
+        setDrawerProject((prev) => prev ? { ...prev, members: updatedMembers } : prev);
+      }
+    } catch (err) {
+      console.error('Failed to remove member:', err);
+      alert('Failed to remove member. Please try again.');
     }
   }
 
   /* Pull latest project details before opening drawer */
   function openDrawer(projectId) {
-    const p = (state.projects || []).find((x) => x.id === projectId)
-    if (!p) return
-    setDrawerProject(p)
+    const p = projects.find((x) => x.id === projectId);
+    if (!p) return;
+    setDrawerProject(p);
   }
 
   /* ----- small demo template list (quick create) ----- */
@@ -356,7 +478,7 @@ export default function AdminProjectsPage() {
         <header className="ap-header">
           <div>
             <h1 className="ap-title">Projects — Admin</h1>
-            <p className="ap-sub">Manage all projects, view member lists and monitor task status.</p>
+            <p className="ap-sub">Manage all projects, view member lists and monitor task status. {loading && <span className="text-indigo-600">• Syncing...</span>}</p>
           </div>
 
           <div className="ap-header-actions">
@@ -445,9 +567,7 @@ export default function AdminProjectsPage() {
                     </div>
                     <div className="ap-card-actions">
                       <button className="ap-icon-btn" title="Archive" onClick={() => updateProject(p.id, { status: p.status === "archived" ? "active" : "archived" })}><Archive size={18} /></button>
-                      <button className="ap-icon-btn text-red-600" title="Delete" onClick={() => {
-                        if (window.confirm("Delete project permanently?")) updateProject(p.id, { delete: true })
-                      }}><Trash2 size={18} /></button>
+                      <button className="ap-icon-btn text-red-600" title="Delete" onClick={() => setDeleteConfirm({ projectId: p.id, projectTitle: p.title })}><Trash2 size={18} /></button>
                     </div>
                   </div>
 
@@ -514,6 +634,18 @@ export default function AdminProjectsPage() {
       {/* Create modal */}
       {showCreate && <CreateProjectModal defaultTemplate={null} onClose={() => setShowCreate(false)} onCreate={createProject} />}
 
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <DeleteConfirmModal
+          projectTitle={deleteConfirm.projectTitle}
+          onConfirm={() => {
+            updateProject(deleteConfirm.projectId, { delete: true })
+            setDeleteConfirm(null)
+          }}
+          onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
+
       {/* Drawer */}
       {drawerProject && (
         <ProjectDrawer
@@ -528,5 +660,47 @@ export default function AdminProjectsPage() {
         />
       )}
     </div>
+  )
+}
+
+/* ---------- Delete Confirmation Modal ---------- */
+function DeleteConfirmModal({ projectTitle, onConfirm, onCancel }) {
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="relative bg-white rounded-2xl p-6 shadow-2xl w-[440px] max-w-[92%]"
+      >
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+            <Trash2 className="w-6 h-6 text-red-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-slate-900">Delete Project</h3>
+            <p className="text-sm text-slate-600 mt-2">
+              Are you sure you want to delete <span className="font-semibold text-slate-900">"{projectTitle}"</span>? This action cannot be undone and all associated tasks will be permanently removed.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-sm"
+          >
+            Delete Project
+          </button>
+        </div>
+      </motion.div>
+    </div>,
+    document.body
   )
 }
