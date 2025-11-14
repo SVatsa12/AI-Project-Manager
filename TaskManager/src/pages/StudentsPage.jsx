@@ -314,6 +314,12 @@ export default function StudentsPage() {
   );
   const initialized = useRef(false);
 
+  // gpState for managing projects and student overrides
+  const [gpState, setGpState] = useState({
+    projects: [],
+    _studentOverrides: {},
+  });
+
   // local UI state
   const [query, setQuery] = useState("");
   const [filterProject, setFilterProject] = useState("");
