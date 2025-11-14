@@ -1,5 +1,6 @@
 // src/contexts/StudentContext.jsx
 import React, { createContext, useContext, useState, useEffect } from "react"
+import { apiFetch } from "../lib/api"
 
 const StudentContext = createContext()
 
@@ -158,6 +159,31 @@ export function StudentProvider({ children }) {
     setStudentState(empty)
   }
 
+  // --- Fetch profile from backend ---
+  const refetchProfile = async () => {
+    try {
+      const data = await apiFetch("/api/auth/me", { method: "GET" })
+      
+      if (data && data.user) {
+        const user = data.user
+        setStudentState({
+          profile: {
+            name: user.name || "",
+            email: user.email || "",
+            year: user.profile?.year || "",
+            department: user.profile?.department || "",
+            college: user.profile?.college || "",
+            profilePicture: user.profile?.profilePicture || null,
+          },
+          skills: Array.isArray(user.skills) ? user.skills : [],
+          interests: Array.isArray(user.interests) ? user.interests : [],
+        })
+      }
+    } catch (error) {
+      console.error("Failed to fetch profile:", error)
+    }
+  }
+
   const value = {
     profile: studentState.profile,
     skills: studentState.skills,
@@ -176,6 +202,7 @@ export function StudentProvider({ children }) {
     removeInterest,
     // utilities
     resetStudentState,
+    refetchProfile,
     // raw setter (use sparingly)
     _rawState: studentState,
     _setRawState: setStudentState,

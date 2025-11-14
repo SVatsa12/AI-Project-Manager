@@ -40,8 +40,15 @@ export default function StudentDashboard() {
   // Contexts
   const { projects, updateProject, addTask, updateTask } = useProjectsBackend()
   const { competitions: persistedCompetitions = [], enroll, unenroll, refresh: refreshCompetitions } = useCompetitions()
-  const { profile, skills, interests, updateProfile, addSkill, removeSkill, addInterest, removeInterest } = useStudent()
+  const { profile, skills, interests, updateProfile, addSkill, removeSkill, addInterest, removeInterest, refetchProfile } = useStudent()
   const { activeProject, setActiveProject, sendMessage, getMessages, clearChat } = useChat()
+
+  // Fetch profile data from backend on mount
+  useEffect(() => {
+    if (user && refetchProfile) {
+      refetchProfile()
+    }
+  }, [user, refetchProfile])
 
   // State
   const [activeTab, setActiveTab] = useState("profile")
@@ -295,6 +302,11 @@ export default function StudentDashboard() {
       newInterests.forEach((i) => {
         if (!prevInterests.includes(i)) addInterest(i)
       })
+
+      // Refetch profile from backend to ensure sync
+      if (refetchProfile) {
+        await refetchProfile()
+      }
 
       // Refresh user data from auth context
       if (user?.refetch) {
