@@ -26,11 +26,33 @@ function uid(prefix = "id") {
 
 /* ---------- Helpers ---------- */
 function projectProgress(project) {
-  const tasks = Array.isArray(project.tasks) ? project.tasks : []
-  if (tasks.length === 0) return { percent: 0, done: 0, total: 0 }
-  const done = tasks.filter((t) => t.status === "done").length
-  const percent = Math.round((done / tasks.length) * 100)
-  return { percent, done, total: tasks.length }
+  // Use userProgress if available (matches AdminDashboard logic)
+  const members = project.members || []
+  const userProgress = project.userProgress || {}
+  
+  if (members.length === 0) {
+    // Fallback to task-based progress if no members
+    const tasks = Array.isArray(project.tasks) ? project.tasks : []
+    if (tasks.length === 0) return { percent: 0, done: 0, total: 0 }
+    const done = tasks.filter((t) => t.status === "done").length
+    const percent = Math.round((done / tasks.length) * 100)
+    return { percent, done, total: tasks.length }
+  }
+  
+  // Calculate progress based on student status (same as AdminDashboard)
+  let totalCompletionScore = 0
+  members.forEach(email => {
+    const status = userProgress[email] || "not-started"
+    if (status === "completed") totalCompletionScore += 100
+    else if (status === "almost-done") totalCompletionScore += 80
+    else if (status === "in-progress") totalCompletionScore += 40
+    else totalCompletionScore += 0
+  })
+  
+  const percent = members.length > 0 ? Math.round(totalCompletionScore / members.length) : 0
+  const done = members.filter(email => userProgress[email] === "completed").length
+  
+  return { percent, done, total: members.length }
 }
 
 function tasksByStatus(project) {

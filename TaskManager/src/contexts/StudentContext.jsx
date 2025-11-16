@@ -1,75 +1,27 @@
 // src/contexts/StudentContext.jsx
-import React, { createContext, useContext, useState, useEffect } from "react"
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { apiFetch } from "../lib/api"
 
 const StudentContext = createContext()
 
-const STUDENT_STORAGE_KEY = "student_profile_v1"
-
-function readStudentState() {
-  try {
-    const raw = localStorage.getItem(STUDENT_STORAGE_KEY)
-    if (!raw)
-      return {
-        profile: {
-          name: "",
-          email: "",
-          year: "",
-          department: "",
-          college: "",
-          profilePicture: null,
-        },
-        skills: [],
-        interests: [],
-      }
-    return JSON.parse(raw)
-  } catch (e) {
-    console.error("Error reading student state", e)
-    return {
-      profile: {
-        name: "",
-        email: "",
-        year: "",
-        department: "",
-        college: "",
-        profilePicture: null,
-      },
-      skills: [],
-      interests: [],
-    }
-  }
-}
-
-function writeStudentState(state) {
-  try {
-    localStorage.setItem(STUDENT_STORAGE_KEY, JSON.stringify(state))
-  } catch (e) {
-    console.warn("Failed to write student state to localStorage", e)
+// Empty initial state - will be populated from backend
+function getInitialState() {
+  return {
+    profile: {
+      name: "",
+      email: "",
+      year: "",
+      department: "",
+      college: "",
+      profilePicture: null,
+    },
+    skills: [],
+    interests: [],
   }
 }
 
 export function StudentProvider({ children }) {
-  const [studentState, setStudentState] = useState(() => readStudentState())
-
-  // Persist to localStorage whenever state changes
-  useEffect(() => {
-    writeStudentState(studentState)
-  }, [studentState])
-
-  // Listen for storage changes from other tabs/windows and sync
-  useEffect(() => {
-    function handleStorage(e) {
-      if (e.key !== STUDENT_STORAGE_KEY) return
-      try {
-        const parsed = JSON.parse(e.newValue || '{"profile":{},"skills":[],"interests":[]}')
-        setStudentState(parsed)
-      } catch (err) {
-        console.error("Error parsing student state from storage", err)
-      }
-    }
-    window.addEventListener("storage", handleStorage)
-    return () => window.removeEventListener("storage", handleStorage)
-  }, [])
+  const [studentState, setStudentState] = useState(getInitialState)
 
   // --- Profile operations ---
   const updateProfile = (profileData) => {
@@ -160,7 +112,7 @@ export function StudentProvider({ children }) {
   }
 
   // --- Fetch profile from backend ---
-  const refetchProfile = async () => {
+  const refetchProfile = useCallback(async () => {
     try {
       const data = await apiFetch("/api/auth/me", { method: "GET" })
       
@@ -182,7 +134,7 @@ export function StudentProvider({ children }) {
     } catch (error) {
       console.error("Failed to fetch profile:", error)
     }
-  }
+  }, [])
 
   const value = {
     profile: studentState.profile,

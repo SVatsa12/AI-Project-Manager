@@ -256,7 +256,7 @@ Format your response in clear sections with headers. Use single asterisks (*) fo
         <main className="p-8 space-y-8">
           <div className="flex items-center justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-bold text-slate-800">Welcome, {user?.name || "Admin"}</h1>
+              <h1 className="text-3xl font-bold text-slate-800">Welcome,Admin</h1>
               <p className="text-slate-500 mt-1">Overview of projects, students and AI suggestions</p>
             </div>
 

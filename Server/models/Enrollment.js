@@ -8,8 +8,9 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ["admin", "student"], default: "student" },
 
-    // ✅ New field
+    // ✅ New fields
     skills: { type: [String], default: [] },
+    interests: { type: [String], default: [] },
 
     mustResetPassword: { type: Boolean, default: false },
     profile: { type: Object, default: {} },
