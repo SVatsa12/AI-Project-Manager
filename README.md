@@ -298,8 +298,6 @@ The AI engine uses the following parameters:
 
 This ensures tasks are distributed efficiently, fairly, and smartly.
 
----
-
 ## 📈 Future Scope
 
 * GitHub integration for auto task syncing.
@@ -309,25 +307,8 @@ This ensures tasks are distributed efficiently, fairly, and smartly.
 * Chat-based assistant interface.
 * Model-based recommendation system.
 
----
-
 ## 🧑‍💻 Contributing
 
 Contributions are welcome! Feel free to open PRs or issues.
-
----
-
-## 📜 License
-
-MIT License
-
----
-
-## ✨ Acknowledgements
-
-* Inspired by modern AI-driven workflow tools.
-* Built with guidance from ChatGPT.
-
----
 
 If you want me to customize the README with logos, badges, or screenshots, just upload them or tell me!
