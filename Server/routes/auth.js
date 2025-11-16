@@ -182,7 +182,7 @@ router.put("/me", async (req, res) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     const userId = decoded.sub;
-    const allowed = ["name", "skills", "profile", "password"];
+    const allowed = ["name", "skills", "interests", "profile", "password"];
     const updates = {};
 
     // pick allowed fields from body
@@ -201,6 +201,14 @@ router.put("/me", async (req, res) => {
     // If skills are provided as comma-separated string, normalize to array
     if (updates.skills && typeof updates.skills === "string") {
       updates.skills = updates.skills
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+
+    // If interests are provided as comma-separated string, normalize to array
+    if (updates.interests && typeof updates.interests === "string") {
+      updates.interests = updates.interests
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);

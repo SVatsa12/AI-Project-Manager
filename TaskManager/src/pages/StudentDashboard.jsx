@@ -43,12 +43,20 @@ export default function StudentDashboard() {
   const { profile, skills, interests, updateProfile, addSkill, removeSkill, addInterest, removeInterest, refetchProfile } = useStudent()
   const { activeProject, setActiveProject, sendMessage, getMessages, clearChat } = useChat()
 
-  // Fetch profile data from backend on mount
+  // Track the current user to detect changes
+  const currentUserEmail = useRef(null)
+
+  // Fetch profile data from backend when user changes
   useEffect(() => {
-    if (user && refetchProfile) {
-      refetchProfile()
+    if (user?.email && refetchProfile) {
+      // If user changed, fetch new profile
+      if (currentUserEmail.current !== user.email) {
+        currentUserEmail.current = user.email
+        console.log('[StudentDashboard] User changed to:', user.email, '- fetching profile')
+        refetchProfile()
+      }
     }
-  }, [user, refetchProfile])
+  }, [user?.email, refetchProfile])
 
   // State
   const [activeTab, setActiveTab] = useState("profile")
@@ -266,6 +274,7 @@ export default function StudentDashboard() {
       const updates = {
         name: data.profile?.name || user?.name,
         skills: data.skills || [],
+        interests: data.interests || [],
         profile: data.profile || {},
       }
 

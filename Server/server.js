@@ -764,7 +764,7 @@ const PORT = process.env.PORT || 4003;
 
     // ---- Add CSV import endpoint (backend support for Import CSV button) ----
     try {
-      const User = require("./models/User"); // correct relative path from server.js
+      const User = require("../models/User"); // correct relative path from server.js
 
       app.post("/api/students/importcsv", async (req, res) => {
         try {

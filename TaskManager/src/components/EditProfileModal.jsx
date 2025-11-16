@@ -36,12 +36,14 @@ export default function EditProfileModal({
 
   const handleAddSkill = () => {
     const v = skillInput.trim()
+    console.log("[EditProfileModal] Adding skill:", v)
     if (!v) return
     if (!localSkills.includes(v)) setLocalSkills((s) => [...s, v])
     setSkillInput("")
   }
   const handleAddInterest = () => {
     const v = interestInput.trim()
+    console.log("[EditProfileModal] Adding interest:", v)
     if (!v) return
     if (!localInterests.includes(v)) setLocalInterests((i) => [...i, v])
     setInterestInput("")
@@ -51,6 +53,11 @@ export default function EditProfileModal({
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    console.log("[EditProfileModal] Submitting form:", {
+      profile: form,
+      skills: localSkills,
+      interests: localInterests,
+    })
     onSave({
       profile: form,
       skills: localSkills,
