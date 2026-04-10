@@ -31,7 +31,7 @@ AI Task Assistant is a full‑stack web application designed to help admins and 
 
 ### **Student Features**
 
-* **Clean Student Dashboard** with:
+* Clean Student Dashboard with:
 
   * Assigned tasks
   * Productivity graph
@@ -41,16 +41,16 @@ AI Task Assistant is a full‑stack web application designed to help admins and 
 
 ---
 
-## 🏗️ Tech Stack
+## Tech Stack
 
-### **Frontend**
+### Frontend
 
 * React.js (Vite or CRA)
 * TailwindCSS (UI styling)
 * Recharts (Charts)
 * ShadCN UI components
 
-### **Backend**
+### Backend
 
 * Node.js + Express
 * MongoDB (Atlas or local)
@@ -58,7 +58,7 @@ AI Task Assistant is a full‑stack web application designed to help admins and 
 * Socket.io (real-time updates)
 * JWT Authentication
 
-### **Others**
+### Others
 
 * CSV Import handling
 * Role-based access (admin / student)
@@ -66,7 +66,7 @@ AI Task Assistant is a full‑stack web application designed to help admins and 
 
 ---
 
-## 📁 Folder Structure (Simplified)
+## Folder Structure (Simplified)
 
 ```
 AITaskAssistant/
