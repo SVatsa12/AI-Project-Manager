@@ -42,7 +42,8 @@ app.use(express.json({ limit: "64kb" }));
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 
 app.use(cors({
-  origin: FRONTEND_ORIGIN,                 // not '*'
+  origin: FRONTEND_ORIGIN, 
+  "https://ai-project-manager.vercel.app",                // not '*'
   credentials: true,                       // allow cookies/Authorization with credentials: 'include'
   methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
   allowedHeaders: ["Authorization","Content-Type","Accept","X-Requested-With"],
@@ -764,7 +765,7 @@ const PORT = process.env.PORT || 4003;
 
     // ---- Add CSV import endpoint (backend support for Import CSV button) ----
     try {
-      const User = require("../models/User"); // correct relative path from server.js
+      const User = require("./models/user"); // correct relative path from server.js
 
       app.post("/api/students/importcsv", async (req, res) => {
         try {
