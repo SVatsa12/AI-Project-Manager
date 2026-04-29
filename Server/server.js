@@ -45,7 +45,7 @@ const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 app.use(cors({
   origin: [
     process.env.FRONTEND_ORIGIN || "http://localhost:5173",
-    "https://ai-project-manager.vercel.app"
+    "https://ai-project-manager-three.vercel.app" 
   ],
   credentials: true,
   methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
