@@ -676,7 +676,7 @@ const PORT = process.env.PORT || 4003;
 
     // ---- Migration endpoint: Check for users in old User model and migrate to Enrollment ----
     try {
-      const User = require("./models/user");
+      const User = require("./models/User");
       const Enrollment = require("./models/Enrollment");
 
       app.get("/api/admin/migrate-users", async (req, res) => {
@@ -768,7 +768,7 @@ const PORT = process.env.PORT || 4003;
 
     // ---- Add CSV import endpoint (backend support for Import CSV button) ----
     try {
-      const User = require("./models/user"); // correct relative path from server.js
+      const User = require("./models/User"); // correct relative path from server.js
 
       app.post("/api/students/importcsv", async (req, res) => {
         try {
