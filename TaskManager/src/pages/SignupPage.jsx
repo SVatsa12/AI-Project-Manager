@@ -15,7 +15,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:4003";
+  const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:4003";
 
   const validate = () => {
     if (!name) return "Name is required.";
