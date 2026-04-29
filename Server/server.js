@@ -41,10 +41,13 @@ app.use(helmet());
 app.use(express.json({ limit: "64kb" })); 
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 
+// ✅ CORRECT
 app.use(cors({
-  origin: FRONTEND_ORIGIN, 
-  "https://ai-project-manager.vercel.app",                // not '*'
-  credentials: true,                       // allow cookies/Authorization with credentials: 'include'
+  origin: [
+    process.env.FRONTEND_ORIGIN || "http://localhost:5173",
+    "https://ai-project-manager.vercel.app"
+  ],
+  credentials: true,
   methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
   allowedHeaders: ["Authorization","Content-Type","Accept","X-Requested-With"],
 }));
