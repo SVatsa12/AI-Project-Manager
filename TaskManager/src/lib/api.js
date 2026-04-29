@@ -12,7 +12,7 @@ export async function apiFetch(path, options = {}) {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   // Support both Vite and CRA env variables
-  const baseUrl = import.meta.env?.VITE_BACKEND_URL || process.env.REACT_APP_API_BASE || 'http://localhost:4003';
+  const baseUrl = import.meta.env?.VITE_BACKEND_URL || process.env.REACT_APP_API_BASE || 'https://ai-project-manager-j7de.onrender.com';
   const fullUrl = `${baseUrl}${path}`;
 
   console.log('[api.js] Fetching:', options.method || 'GET', fullUrl);
