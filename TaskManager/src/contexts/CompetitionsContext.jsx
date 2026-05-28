@@ -10,7 +10,7 @@ export function CompetitionsProvider({ children }) {
   const [competitions, setCompetitions] = useState([]);
   const socketRef = useRef(null);
 
-  const BACKEND_API = import.meta.env.VITE_BACKEND_URL || "http://localhost:4003";
+  const BACKEND_API = import.meta.env.VITE_BACKEND_URL || "https://ai-project-manager-j7de.onrender.com";
   const BACKEND_WS = BACKEND_API;
 
   async function loadPersisted() {

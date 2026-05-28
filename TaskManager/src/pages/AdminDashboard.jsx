@@ -164,7 +164,7 @@ export default function AdminDashboard() {
         }
       })
       
-      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:4003"
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://ai-project-manager-j7de.onrender.com"
       
       const response = await fetch(`${BACKEND_URL}/api/chat`, {
         method: "POST",

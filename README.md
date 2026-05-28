@@ -2,6 +2,9 @@
 
 AI Task Assistant is a full‑stack web application designed to help admins and students manage tasks, projects, and productivity using AI‑powered tools. It includes real‑time collaboration, intelligent suggestions, task allocation via AI, CSV import, and a modern dashboard.
 
+🔗 **Live Demo:** [https://ai-project-manager-three.vercel.app](https://ai-project-manager-three.vercel.app)
+🔗 **Backend API:** [https://ai-project-manager-j7de.onrender.com](https://ai-project-manager-j7de.onrender.com)
+
 ---
 
 ## 🚀 Features

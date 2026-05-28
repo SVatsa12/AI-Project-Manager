@@ -15,7 +15,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:4003";
+  const API_BASE = import.meta.env.VITE_BACKEND_URL || "https://ai-project-manager-j7de.onrender.com";
 
   const validate = () => {
     if (!name) return "Name is required.";

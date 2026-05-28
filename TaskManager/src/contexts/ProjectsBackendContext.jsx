@@ -140,7 +140,7 @@ export function ProjectsBackendProvider({ children }) {
 
   // Socket.IO for real-time updates
   useEffect(() => {
-    const backendUrl = import.meta.env?.VITE_BACKEND_URL || 'http://localhost:4003';
+    const backendUrl = import.meta.env?.VITE_BACKEND_URL || 'https://ai-project-manager-j7de.onrender.com';
     const socket = io(backendUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,

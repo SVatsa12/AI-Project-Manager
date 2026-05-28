@@ -8,7 +8,7 @@ const ProjectsContext = createContext()
 const STORAGE_key = "gp_state_v1_projects_v2"
 
 // Socket.IO connection
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:4003"
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://ai-project-manager-j7de.onrender.com"
 let socket = null
 
 function getSocket() {

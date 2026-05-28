@@ -7,7 +7,7 @@ const AuthContext = createContext();
 const TOKEN_KEY = "gpa_token";
 const USER_KEY = "gpa_user";
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:4003";
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "https://ai-project-manager-j7de.onrender.com";
 
 
 

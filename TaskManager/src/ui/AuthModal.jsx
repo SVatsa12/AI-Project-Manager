@@ -21,7 +21,7 @@ export default function AuthModal({ open, onClose, mode: externalMode = null }) 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:4003";
+  const API_BASE = import.meta.env.VITE_BACKEND_URL || "https://ai-project-manager-j7de.onrender.com";
 
   // Sync internal mode when parent supplies externalMode
   useEffect(() => {

@@ -34,7 +34,7 @@ const BACKEND_API = (() => {
   ) {
     return process.env.REACT_APP_BACKEND_URL;
   }
-  return "http://localhost:4003";
+  return "https://ai-project-manager-j7de.onrender.com";
 })();
 
 /* ===== Auth-aware fetch helper ===== */

@@ -222,7 +222,7 @@ export default function CompetitionsPage() {
   }, [bookmarks])
 
   // backend base (Vite env recommended)
-  const BACKEND_API = import.meta.env.VITE_BACKEND_URL || "http://localhost:4003"
+  const BACKEND_API = import.meta.env.VITE_BACKEND_URL || "https://ai-project-manager-j7de.onrender.com"
 
   useEffect(() => {
     let mounted = true
