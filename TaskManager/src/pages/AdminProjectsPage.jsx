@@ -527,7 +527,7 @@ export default function AdminProjectsPage() {
         </header>
 
         {/* Analytics */}
-        <div className="ap-analytics grid grid-cols-2 md:flex md:flex-row gap-3">
+        <div className="ap-analytics">
           <div className="ap-stat-card">
             <div className="ap-stat-label">Active Projects</div>
             <div className="ap-stat-value">{analytics.active}</div>
