@@ -56,6 +56,8 @@ app.use(morgan("tiny"));
 app.use("/api/allocator", allocatorRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/projects", projectsRouter);
+app.use("/api/chat", chatRouter);
+app.get("/health", (req, res) => res.json({ status: "ok" }));
 
 const parser = new Parser({ timeout: 15000 });
 const limiter = rateLimit({
@@ -851,10 +853,4 @@ const rl = rateLimit({
   message: { error: "Too many requests, slow down." },
 });
 app.use(rl);
-
-// Health
-app.get("/health", (req, res) => res.json({ status: "ok" }));
-
-// Chat route
-app.use("/api/chat", chatRouter);
 
