@@ -34,14 +34,18 @@ async function chat({ messages = [], max_output_tokens = 800, temperature = 0.2 
   // to match the modern Gemini API specification.
   // ===================================================================
 
-  // 1. CONSTRUCT THE CORRECT GEMINI API PAYLOAD ('contents')
-  const contents = messages.map(msg => ({
+  // 1. EXTRACT SYSTEM PROMPT (IF ANY)
+  const systemMsg = messages.find(m => m.role === 'system');
+  const chatMessages = messages.filter(m => m.role !== 'system');
+
+  // 2. CONSTRUCT THE CORRECT GEMINI API PAYLOAD ('contents')
+  const contents = chatMessages.map(msg => ({
     // Gemini uses 'model' for the assistant's role, and 'user' for the user's role.
     role: msg.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: String(msg.content ?? msg.text ?? "") }]
   }));
 
-  // 2. USE THE CORRECT GEMINI REQUEST BODY STRUCTURE
+  // 3. USE THE CORRECT GEMINI REQUEST BODY STRUCTURE
   const body = {
     contents,
     generationConfig: {
@@ -49,6 +53,13 @@ async function chat({ messages = [], max_output_tokens = 800, temperature = 0.2 
       maxOutputTokens: max_output_tokens,
     }
   };
+
+  // Add system instruction if present
+  if (systemMsg) {
+    body.systemInstruction = {
+      parts: [{ text: String(systemMsg.content ?? systemMsg.text ?? "") }]
+    };
+  }
 
   // 3. USE THE CORRECT GEMINI ENDPOINT URL
   const endpoint = `${GENERATIVE_BASE}/models/${MODEL}:generateContent`;
