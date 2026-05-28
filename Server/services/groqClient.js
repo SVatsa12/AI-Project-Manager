@@ -1,7 +1,7 @@
 // server/services/groqClient.js
 const fetch = global.fetch ?? require("node-fetch");
 
-const MODEL = process.env.GROQ_MODEL || "llama3-70b-8192";
+const MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 const API_KEY = process.env.GROQ_API_KEY || null;
 const TIMEOUT_MS = parseInt(process.env.GROQ_CHAT_REQUEST_TIMEOUT_MS || "30000", 10);
 
