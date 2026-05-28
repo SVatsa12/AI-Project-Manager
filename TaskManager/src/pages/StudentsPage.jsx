@@ -940,17 +940,18 @@ export default function StudentsPage() {
       </div>
 
       {/* Centered page content area */}
-      <div className="p-8 max-w-7xl mx-auto students-page">
-        {/* ---------- Header section ---------- */}
-        <div className="flex items-start justify-between mb-6 gap-6">
+      <div className="students-card max-w-[1200px] mx-auto min-h-[calc(100vh-2rem)] flex flex-col bg-white/95 shadow-2xl relative z-10 w-[95%] md:w-full my-4">
+        {/* Top Header / Actions */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6 lg:p-8 border-b border-slate-100 gap-4">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-800">Students</h2>
-            <p className="text-sm text-slate-500 mt-1">
+            <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 tracking-tight">
+              Students
+            </h1>
+            <p className="text-sm md:text-base text-slate-500 mt-1 max-w-sm">
               Manage enrolled users, their projects, and participation.
             </p>
           </div>
-
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             <ImportCsvButton
               onImport={(newStudents) => {
                 setGpState((prev) => {
@@ -984,22 +985,19 @@ export default function StudentsPage() {
               }}
               showToast={showToast}
             />
-
-            {/* Search box */}
-            <div className="flex items-center rounded-lg border bg-white px-3 py-2 shadow-sm">
-              <Search className="w-4 h-4 text-slate-400 mr-2" />
+            <div className="relative flex-1 md:flex-none min-w-[150px]">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
+                type="search"
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
                   setPage(1);
                 }}
-                placeholder="Search by name, gmail or skill"
-                className="outline-none text-sm w-64 placeholder:text-slate-400"
+                placeholder="Search by name, gmail..."
+                className="pl-9 w-full md:w-64 border-slate-200 rounded-lg text-sm"
               />
             </div>
-
-            {/* Add student via backend */}
             <button
               type="button"
               onClick={() => setShowAddModal(true)}
@@ -1011,56 +1009,54 @@ export default function StudentsPage() {
           </div>
         </div>
 
-        {/* ---------- Main white card ---------- */}
-        <div className="students-card p-4 rounded-2xl">
-          {/* Filters row */}
-          <div className="flex items-center gap-4 mb-4">
-            {/* Filter by project */}
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-slate-500">
-                Filter by project
-              </label>
-              <select
-                value={filterProject}
-                onChange={(e) => {
-                  setFilterProject(e.target.value);
-                  setPage(1);
-                }}
-                className="ml-2 px-3 py-2 border rounded-lg bg-white text-sm shadow-inner"
-              >
-                <option value="">All projects</option>
-                {(gpState.projects || []).map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Filter by status */}
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-slate-500">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setPage(1);
-                }}
-                className="ml-2 px-3 py-2 border rounded-lg bg-white text-sm shadow-inner"
-              >
-                <option value="">All</option>
-                <option value="active">Active</option>
-                <option value="disabled">Disabled</option>
-              </select>
-            </div>
-
-            <div className="ml-auto text-sm text-slate-500">
-              Showing {filtered.length} students
-            </div>
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 px-4 md:px-6 lg:px-8 py-4 bg-slate-50/50">
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <Filter className="w-4 h-4" />
+            <span className="hidden sm:inline">Filter by project</span>
+            <span className="sm:hidden">Project</span>
           </div>
+          <select
+            value={filterProject}
+            onChange={(e) => {
+              setFilterProject(e.target.value);
+              setPage(1);
+            }}
+            className="w-full sm:w-auto min-w-[140px] text-sm border-slate-200 rounded-lg"
+          >
+            <option value="">All projects</option>
+            {(gpState.projects || []).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title}
+              </option>
+            ))}
+          </select>
 
-          {/* ---------- Table ---------- */}
-          <div className="overflow-x-auto">
+          <div className="flex items-center gap-2 text-sm text-slate-500 sm:ml-4">
+            <span className="hidden sm:inline">Status</span>
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
+            className="w-full sm:w-auto min-w-[120px] text-sm border-slate-200 rounded-lg"
+          >
+            <option value="">All</option>
+            <option value="active">Active</option>
+            <option value="disabled">Disabled</option>
+          </select>
+
+          <div className="flex-1"></div>
+          <div className="text-sm font-medium text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-100 shadow-sm whitespace-nowrap text-center">
+            {filtered.length} student{filtered.length !== 1 ? "s" : ""}
+          </div>
+        </div>
+
+        {/* Main Table */}
+        <div className="flex-1 overflow-x-auto px-4 md:px-6 lg:px-8 pb-4">
+          <div className="min-w-[800px]">
             <table
               className="w-full text-left text-sm border-separate"
               style={{ borderSpacing: 0 }}
@@ -1094,33 +1090,32 @@ export default function StudentsPage() {
               </tbody>
             </table>
           </div>
+        </div>
 
-          {/* ---------- Pagination ---------- */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-slate-500">
-              Page {page} of {totalPages}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="px-3 py-2 border rounded-lg disabled:opacity-50 bg-white text-sm"
-              >
-                Prev
-              </button>
-              <button
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="px-3 py-2 border rounded-lg disabled:opacity-50 bg-white text-sm"
-              >
-                Next
-              </button>
-            </div>
+        {/* Pagination */}
+        <div className="px-8 py-4 border-t flex items-center justify-between">
+          <div className="text-sm text-slate-500">
+            Page {page} of {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-3 py-2 border rounded-lg disabled:opacity-50 bg-white text-sm"
+            >
+              Prev
+            </button>
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="px-3 py-2 border rounded-lg disabled:opacity-50 bg-white text-sm"
+            >
+              Next
+            </button>
           </div>
         </div>
-        {/* End white card */}
       </div>
-      {/* End centered page content */}
+
       {showAddModal && (
         <AddStudentModal
           onClose={() => setShowAddModal(false)}

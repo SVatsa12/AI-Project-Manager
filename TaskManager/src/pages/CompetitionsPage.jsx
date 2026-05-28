@@ -289,37 +289,37 @@ export default function CompetitionsPage() {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-6xl mx-auto">
-        <header className="flex items-start justify-between gap-4 mb-6">
+        <header className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-semibold">Competitions & Hackathons</h1>
             <p className="text-sm text-slate-500 mt-1">Modern list view inspired by Devpost — thumbnails, quick stats and actions.</p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center bg-white border rounded-lg px-3 py-2">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full md:w-auto">
+            <div className="flex items-center bg-white border rounded-lg px-3 py-2 w-full md:w-auto">
               <Search className="w-4 h-4 text-slate-400" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, tags or description" className="ml-2 outline-none placeholder:text-slate-400" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, tags or description" className="ml-2 w-full outline-none placeholder:text-slate-400 min-w-[200px]" />
             </div>
 
-            <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2">
-              <label className="text-sm text-slate-600 mr-1">Upcoming</label>
+            <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2 flex-1 md:flex-none">
+              <label className="text-sm text-slate-600 mr-1 whitespace-nowrap">Upcoming</label>
               <input type="checkbox" checked={onlyUpcoming} onChange={(e) => setOnlyUpcoming(e.target.checked)} />
             </div>
 
-            <div className="bg-white border rounded-lg px-2 py-2 flex items-center gap-2">
-              <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className="outline-none text-sm">
+            <div className="bg-white border rounded-lg px-2 py-2 flex items-center gap-2 flex-1 md:flex-none">
+              <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className="w-full outline-none text-sm">
                 <option value="all">All sources</option>
                 {uniqueSources.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
 
-            <div className="bg-white border rounded-lg px-2 py-2 flex items-center gap-2">
+            <div className="bg-white border rounded-lg px-2 py-2 flex items-center gap-2 flex-1 md:flex-none justify-center">
               <button onClick={() => setView("list")} className={`px-3 py-1 rounded ${view === "list" ? "bg-emerald-50 text-emerald-700" : ""}`}>List</button>
               <button onClick={() => setView("grid")} className={`px-3 py-1 rounded ${view === "grid" ? "bg-emerald-50 text-emerald-700" : ""}`}>Grid</button>
             </div>
 
-            <div>
-              <button onClick={() => saveCSV(filtered)} className="bg-white border px-3 py-2 rounded flex items-center gap-2 text-sm">
+            <div className="flex-1 md:flex-none flex justify-end">
+              <button onClick={() => saveCSV(filtered)} className="bg-white border px-3 py-2 rounded flex items-center justify-center gap-2 text-sm w-full md:w-auto">
                 <Download className="w-4 h-4" /> Export
               </button>
             </div>

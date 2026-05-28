@@ -497,19 +497,19 @@ export default function AdminProjectsPage() {
   return (
     <div className="ap-page">
       <div className="ap-container">
-        <header className="ap-header">
+        <header className="ap-header flex-col md:flex-row items-start md:items-center gap-4">
           <div>
             <h1 className="ap-title">Projects — Admin</h1>
-            <p className="ap-sub">Manage all projects, view member lists and monitor task status. {loading && <span className="text-indigo-600">• Syncing...</span>}</p>
+            <p className="ap-sub text-sm">Manage all projects, view member lists and monitor task status. {loading && <span className="text-indigo-600">• Syncing...</span>}</p>
           </div>
 
-          <div className="ap-header-actions">
-            <div className="ap-search">
-              <input placeholder="Search projects, members" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <div className="ap-header-actions flex-wrap md:flex-nowrap w-full md:w-auto gap-2 md:gap-3">
+            <div className="ap-search w-full md:w-auto flex-1">
+              <input className="w-full" placeholder="Search projects, members" value={query} onChange={(e) => setQuery(e.target.value)} />
             </div>
 
-            <div className="ap-templates">
-              <select onChange={(e) => {
+            <div className="ap-templates flex-1 md:flex-none">
+              <select className="w-full" onChange={(e) => {
                 const i = Number(e.target.value)
                 if (!isNaN(i) && i >= 0) {
                   setShowCreate(true)
@@ -522,12 +522,12 @@ export default function AdminProjectsPage() {
               </select>
             </div>
 
-            <button className="ap-btn ap-btn-primary" onClick={() => setShowCreate(true)}><PlusCircle className="icon" /> New</button>
+            <button className="ap-btn ap-btn-primary whitespace-nowrap" onClick={() => setShowCreate(true)}><PlusCircle className="icon" /> New</button>
           </div>
         </header>
 
         {/* Analytics */}
-        <div className="ap-analytics">
+        <div className="ap-analytics grid grid-cols-2 md:flex md:flex-row gap-3">
           <div className="ap-stat-card">
             <div className="ap-stat-label">Active Projects</div>
             <div className="ap-stat-value">{analytics.active}</div>
@@ -625,7 +625,7 @@ export default function AdminProjectsPage() {
         </div>
 
         {/* Audit / right column compact */}
-        <div className="ap-footer">
+        <div className="ap-footer flex-col lg:flex-row gap-6">
           <div className="ap-audit">
             <div className="ap-audit-title">Audit log</div>
             <div className="ap-audit-list">
