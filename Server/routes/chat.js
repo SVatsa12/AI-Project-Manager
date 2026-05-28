@@ -1,7 +1,7 @@
 // server/routes/chat.js
 const express = require("express");
 const router = express.Router();
-const GoogleClient = require("../services/googleClient"); // new client
+const GroqClient = require("../services/groqClient");
 const { conversationStore } = require("../services/conversationStore");
 const { requireAuthIfEnabled } = require("../middleware/authMiddleware");
 
@@ -106,8 +106,8 @@ router.post("/", requireAuthIfEnabled, async (req, res) => {
       { role: "user", content: message },
     ]
 
-    // send to Google client - adapt params as needed for your wrapper
-    const reply = await GoogleClient.chat({ messages, max_output_tokens: 700 })
+    // send to Groq client
+    const reply = await GroqClient.chat({ messages, max_output_tokens: 700 })
 
     if (conversationId) {
       // store both user message and assistant reply (make sure your conversationStore supports push/get)
@@ -118,8 +118,8 @@ router.post("/", requireAuthIfEnabled, async (req, res) => {
     return res.json({ reply })
   } catch (err) {
     console.error("Chat route error:", err)
-    if (err.name === "GoogleAPIError" || (err.message && err.message.includes("timed out"))) {
-      return res.status(502).json({ error: "Upstream Google generative API error. Try again later." })
+    if (err.name === "GroqAPIError" || (err.message && err.message.includes("timed out"))) {
+      return res.status(502).json({ error: "Upstream Groq API error. Try again later." })
     }
     return res.status(500).json({ error: "Server error" })
   }
