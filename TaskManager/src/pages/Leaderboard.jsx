@@ -290,7 +290,7 @@ export default function Leaderboard() {
   )
 
   return (
-    <div className="p-8 bg-gradient-to-br from-slate-50 via-white to-indigo-50 min-h-screen">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 via-white to-indigo-50 min-h-screen">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">

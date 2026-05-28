@@ -344,18 +344,16 @@ export default function StudentDashboard() {
       <Sidebar />
 
       <div className="flex-1 flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-100">
-          <div>{/* intentionally blank center area */}</div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 bg-white border border-slate-100 px-3 py-2 rounded-2xl shadow-sm">
+        <div className="flex items-center justify-end px-4 md:px-6 py-3 md:py-4 bg-white border-b border-slate-100 pl-14 md:pl-6">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="hidden sm:flex items-center gap-3 bg-white border border-slate-100 px-3 py-2 rounded-2xl shadow-sm">
               <div className="text-sm text-slate-600">{user?.email || "demo@example.com"}</div>
             </div>
 
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={handleLogout}
-              className="ml-2 flex items-center gap-2 bg-white border border-slate-200 shadow-sm hover:shadow-md rounded-full px-4 py-2"
+              className="flex items-center gap-2 bg-white border border-slate-200 shadow-sm hover:shadow-md rounded-full px-3 md:px-4 py-2"
               aria-label="Logout"
             >
               <LogOutIcon className="w-4 h-4 text-indigo-600" />
@@ -364,15 +362,15 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        <main className="p-8 space-y-8">
-          <div className="flex items-center justify-between gap-6">
+        <main className="p-4 md:p-8 space-y-6 md:space-y-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
             <div>
-              <h1 className="text-3xl font-bold text-slate-800">Welcome, {user?.name || "Student"}</h1>
-              <p className="text-slate-500 mt-1">Manage your profile, projects, and tasks</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Welcome, {user?.name || "Student"}</h1>
+              <p className="text-slate-500 mt-1 text-sm md:text-base">Manage your profile, projects, and tasks</p>
             </div>
 
-            <div className="flex gap-4">
-              <div className="grid grid-cols-3 gap-4">
+            <div className="w-full md:w-auto">
+              <div className="grid grid-cols-3 gap-2 md:gap-4">
                 <StatCard label="My Tasks" value={`${completedTasks}/${totalTasks}`} icon={<ClipboardList className="w-5 h-5" />} />
                 <StatCard label="My Projects" value={myProjects.length} icon={<FolderOpen className="w-5 h-5" />} />
                 <StatCard label="Available" value={availableProjects.length} icon={<Users className="w-5 h-5" />} />
@@ -381,18 +379,18 @@ export default function StudentDashboard() {
           </div>
 
           {/* Tab Navigation */}
-          <div className="bg-white rounded-2xl shadow-sm p-2">
-            <div className="flex space-x-1">
+          <div className="bg-white rounded-2xl shadow-sm p-1.5 md:p-2">
+            <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
               {[
                 { id: "profile", label: "Profile", icon: MessageCircle /* small icon placeholder */ },
                 { id: "projects", label: "Projects", icon: FolderOpen },
-                { id: "tasks", label: "Task Board", icon: BarChart3 },
-                { id: "chat", label: "Group Chat", icon: MessageCircle },
+                { id: "tasks", label: "Tasks", icon: BarChart3 },
+                { id: "chat", label: "Chat", icon: MessageCircle },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-xl transition ${
+                  className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition whitespace-nowrap text-sm ${
                     activeTab === tab.id
                       ? "bg-indigo-600 text-white shadow-sm"
                       : "text-slate-600 hover:bg-slate-50"

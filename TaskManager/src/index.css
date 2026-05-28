@@ -37,8 +37,14 @@ html, body, #root { height: 100%; }
 
 /* left gutter for roomy layout */
 .hero-inner {
-  padding-left: 6rem;   /* increase to 8rem if you want more left bias */
-  padding-right: 3rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+@media (min-width: 768px) {
+  .hero-inner {
+    padding-left: 6rem;
+    padding-right: 3rem;
+  }
 }
 
 /* hero title: explicit large size and compact leading */
@@ -696,3 +702,27 @@ body.theme-dark {
 .animate-slideInRight {
   animation: slideInRight 0.3s ease-out;
 }
+
+/* Scrollbar hide utility for horizontal scroll areas */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mobile responsive fixes */
+@media (max-width: 768px) {
+  .hero-gloss {
+    min-height: 56vh;
+  }
+  .hero-title {
+    font-size: 2rem;
+    line-height: 1.1;
+  }
+  .StudentDetailDrawer {
+    width: 100%;
+  }
+}
+

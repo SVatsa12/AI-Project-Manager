@@ -16,6 +16,7 @@ export default function LandingPage() {
   const [authMode, setAuthMode] = useState("signup"); // 'signup' | 'login'
   const [policy, setPolicy] = useState(null); // 'privacy' | 'terms' | null
   const [showChat, setShowChat] = useState(false); // controls chatbot mounting
+  const [mobileNav, setMobileNav] = useState(false);
 
   // Smooth scroll helper (safely checks for element)
   function scrollToId(id) {
@@ -64,12 +65,13 @@ export default function LandingPage() {
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="header-transparent sticky top-0 z-30 bg-white/70 backdrop-blur-md border-b border-white/40">
-        <div className="container-max mx-auto px-6 py-3 flex items-center justify-between">
+        <div className="container-max mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Logo />
           </div>
 
-          <nav className="flex items-center gap-4">
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-4">
             <button
               onClick={() => scrollToId("features")}
               className="text-slate-600 hover:text-slate-900"
@@ -106,7 +108,57 @@ export default function LandingPage() {
               <span className="text-sm text-slate-700">{showChat ? "Chat" : "Help"}</span>
             </button>
           </nav>
+
+          {/* Mobile hamburger */}
+          <div className="flex md:hidden items-center gap-2">
+            <button
+              onClick={() => {
+                setAuthMode("signup");
+                setShowAuth(true);
+              }}
+              className="px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg text-sm shadow-md"
+            >
+              Get started
+            </button>
+            <button
+              onClick={() => setMobileNav(!mobileNav)}
+              className="p-2 rounded-lg hover:bg-slate-100 transition"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileNav ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
+
+        {/* Mobile nav dropdown */}
+        {mobileNav && (
+          <div className="md:hidden border-t border-slate-100 bg-white/95 backdrop-blur-md px-4 py-3 space-y-2">
+            <button
+              onClick={() => { scrollToId("features"); setMobileNav(false); }}
+              className="block w-full text-left px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50"
+            >
+              Features
+            </button>
+            <button
+              onClick={() => { scrollToId("how"); setMobileNav(false); }}
+              className="block w-full text-left px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50"
+            >
+              How it works
+            </button>
+            <button
+              onClick={() => { setShowChat((s) => !s); setMobileNav(false); }}
+              className="block w-full text-left px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50"
+            >
+              {showChat ? "Close AI Chat" : "AI Help"}
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="flex-1">
