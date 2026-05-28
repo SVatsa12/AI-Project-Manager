@@ -1,6 +1,8 @@
 // src/components/Chatbot.jsx
 import React, { useState, useEffect, useRef } from "react";
 
+const BACKEND_API = import.meta.env?.VITE_BACKEND_URL || "https://ai-project-manager-j7de.onrender.com";
+
 export default function Chatbot({ openInitially = false }) {
   const [open, setOpen] = useState(Boolean(openInitially));
   const [messages, setMessages] = useState([
@@ -85,7 +87,7 @@ export default function Chatbot({ openInitially = false }) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
-      const res = await fetch("/api/chat", {
+      const res = await fetch(`${BACKEND_API}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text }),
